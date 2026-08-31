@@ -1,6 +1,6 @@
 # Requisitos
 
-Este documento descreve os requisitos iniciais do MVP da plataforma.
+Este documento descreve os requisitos iniciais do MVP do **SGF - Sistema de Gestão Facilitada**.
 
 ## Requisitos Funcionais
 

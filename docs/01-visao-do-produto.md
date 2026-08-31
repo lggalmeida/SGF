@@ -1,5 +1,11 @@
 # Visão do Produto
 
+## Nome do Produto
+
+O produto será chamado **SGF - Sistema de Gestão Facilitada**.
+
+O nome busca comunicar uma solução prática e acessível para pequenas empresas que precisam organizar estoque, finanças e indicadores de gestão.
+
 ## Tema do Projeto
 
 **Desenvolvimento de uma plataforma SaaS para gestão integrada de estoque e finanças com análise de dados aplicada à tomada de decisão em pequenas empresas.**
@@ -21,7 +27,7 @@ Entre os problemas comuns estão:
 
 ## Proposta de Solução
 
-A plataforma proposta busca integrar, em um único sistema, as áreas de estoque, financeiro e análise de dados.
+O SGF busca integrar, em um único sistema, as áreas de estoque, financeiro e análise de dados.
 
 O sistema permitirá que pequenas empresas registrem suas operações principais e acompanhem indicadores que apoiem a tomada de decisão.
 

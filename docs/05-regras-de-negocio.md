@@ -1,6 +1,6 @@
 # Regras de Negócio
 
-Este documento registra as regras de negócio iniciais do MVP.
+Este documento registra as regras de negócio iniciais do MVP do **SGF - Sistema de Gestão Facilitada**.
 
 As regras poderão ser refinadas conforme o projeto evoluir.
 

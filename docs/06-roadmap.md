@@ -1,6 +1,6 @@
 # Roadmap
 
-Este documento apresenta o roadmap inicial de desenvolvimento do projeto.
+Este documento apresenta o roadmap inicial de desenvolvimento do **SGF - Sistema de Gestão Facilitada**.
 
 O objetivo é organizar a construção em etapas, evitando que o escopo fique grande demais para o contexto de um TCC.
 

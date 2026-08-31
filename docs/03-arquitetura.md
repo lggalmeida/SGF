@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-A arquitetura escolhida para o projeto é um **monólito modular**.
+A arquitetura escolhida para o **SGF - Sistema de Gestão Facilitada** é um **monólito modular**.
 
 Essa decisão significa que o sistema será desenvolvido como uma única aplicação backend, mas organizado internamente em módulos de negócio bem definidos. O objetivo é manter o projeto simples de executar e entender, sem abrir mão de separação de responsabilidades.
 

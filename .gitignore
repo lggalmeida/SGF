@@ -1,0 +1,26 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# .NET
+dotnet-install.ps1
+.dotnet/
+bin/
+obj/
+TestResults/
+*.user
+*.suo
+
+# Frontend
+node_modules/
+dist/
+.vite/
+
+# IDE/editor
+.vs/
+.vscode/
+
+# OS
+Thumbs.db
+Desktop.ini

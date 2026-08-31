@@ -1,0 +1,51 @@
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.status-panel {
+  width: min(100%, 560px);
+}
+
+.eyebrow {
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  color: #475569;
+  font-size: 20px;
+  margin-top: 8px;
+}
+
+.status-card {
+  border: 1px solid #dbe3ea;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  margin-top: 32px;
+  padding: 24px;
+  text-align: left;
+}
+
+.status-label {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.status-card strong {
+  color: #166534;
+  font-size: 28px;
+}
+
+.status-card small {
+  color: #475569;
+  font-size: 14px;
+}

@@ -6,7 +6,7 @@ Antes de implementar qualquer funcionalidade, leia a documentação em `/docs`.
 
 ## Objetivo do Projeto
 
-Desenvolver uma plataforma SaaS para gestão integrada de estoque e finanças com análise de dados aplicada à tomada de decisão em pequenas empresas.
+Desenvolver o **SGF - Sistema de Gestão Facilitada**, uma plataforma SaaS para gestão integrada de estoque e finanças com análise de dados aplicada à tomada de decisão em pequenas empresas.
 
 O projeto deve ser robusto o suficiente para se aproximar de uma solução publicável, mas sem complexidade desnecessária.
 

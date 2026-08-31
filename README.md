@@ -1,6 +1,8 @@
-# Plataforma SaaS para Gestão Integrada de Estoque e Finanças
+# SGF - Sistema de Gestão Facilitada
 
-Este repositório contém o projeto de Trabalho de Conclusão de Curso em Sistemas de Informação com o tema:
+Este repositório contém o projeto **SGF - Sistema de Gestão Facilitada**, desenvolvido como Trabalho de Conclusão de Curso em Sistemas de Informação.
+
+O tema acadêmico do projeto é:
 
 **Desenvolvimento de uma plataforma SaaS para gestão integrada de estoque e finanças com análise de dados aplicada à tomada de decisão em pequenas empresas.**
 
@@ -8,7 +10,7 @@ O objetivo é desenvolver uma solução acadêmica robusta, organizada e próxim
 
 ## Objetivo do Produto
 
-A plataforma tem como finalidade apoiar pequenas empresas na gestão integrada de:
+O SGF tem como finalidade apoiar pequenas empresas na gestão integrada de:
 
 - produtos;
 - estoque;
@@ -103,4 +105,108 @@ O arquivo `AGENTS.md` contém orientações para futuros agentes e colaboradores
 
 ## Estado Atual
 
-Neste momento, o projeto está em fase de planejamento técnico e documentação inicial. Nenhuma implementação do sistema foi realizada ainda.
+Neste momento, o projeto possui a fundação técnica inicial:
+
+- backend ASP.NET Core Web API;
+- frontend React com TypeScript;
+- PostgreSQL via Docker Compose;
+- Entity Framework Core configurado;
+- endpoint `GET /api/health`;
+- endpoint `GET /api/health/database`;
+- teste básico da API;
+- teste básico da camada de aplicação.
+
+Nenhuma funcionalidade de negócio foi implementada ainda.
+
+## Como Executar Localmente
+
+### Pré-requisitos
+
+- .NET SDK 10;
+- Node.js;
+- npm;
+- Docker Desktop.
+
+### SDK .NET
+
+O projeto possui um `global.json` apontando para o SDK .NET 10 usado na fundacao tecnica.
+
+Nesta maquina, o SDK .NET 10 tambem foi instalado localmente em `.dotnet/`, pasta ignorada pelo Git. Se voce instalar o SDK .NET 10 globalmente no Windows, tambem podera usar `dotnet` normalmente.
+
+### 1. Subir o PostgreSQL
+
+Na raiz do projeto:
+
+```powershell
+docker compose up -d
+```
+
+O PostgreSQL ficará disponível em:
+
+```text
+Host: 127.0.0.1
+Porta: 15432
+Banco: sgf_dev
+Usuario: sgf_user
+```
+
+A senha usada é apenas local de desenvolvimento e está documentada em `.env.example`.
+
+### 2. Executar o Backend
+
+```powershell
+cd src\backend
+..\..\.dotnet\dotnet.exe run --project Sgf.Api\Sgf.Api.csproj --launch-profile http
+```
+
+A API ficará disponível em:
+
+```text
+http://localhost:5206
+```
+
+Endpoints de validação:
+
+```text
+GET http://localhost:5206/api/health
+GET http://localhost:5206/api/health/database
+```
+
+### 3. Executar o Frontend
+
+Em outro terminal:
+
+```powershell
+cd src\frontend
+npm install
+npm run dev
+```
+
+O frontend ficará disponível normalmente em:
+
+```text
+http://localhost:5173
+```
+
+ou:
+
+```text
+http://127.0.0.1:5173
+```
+
+### 4. Executar Builds e Testes
+
+Backend:
+
+```powershell
+cd src\backend
+..\..\.dotnet\dotnet.exe build Sgf.sln
+..\..\.dotnet\dotnet.exe test Sgf.sln
+```
+
+Frontend:
+
+```powershell
+cd src\frontend
+npm run build
+```

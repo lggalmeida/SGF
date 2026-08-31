@@ -1,6 +1,6 @@
 # Modelo de Domínio
 
-Este documento descreve o modelo inicial de domínio da plataforma.
+Este documento descreve o modelo inicial de domínio do **SGF - Sistema de Gestão Facilitada**.
 
 O modelo ainda é conceitual e poderá ser refinado durante a implementação.
 

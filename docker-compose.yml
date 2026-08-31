@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: sgf_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sgf_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-sgf_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sgf_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - sgf_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sgf_user} -d ${POSTGRES_DB:-sgf_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sgf_postgres_data:
