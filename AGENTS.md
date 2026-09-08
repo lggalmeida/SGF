@@ -141,14 +141,13 @@ Modelo conceitual:
 
 - um usuário pode pertencer a várias empresas;
 - uma empresa pode ter vários usuários;
-- o relacionamento `UserCompany` define o papel do usuário naquela empresa.
+- o relacionamento `Membership` define o papel do usuário naquela empresa.
 
 Papéis iniciais previstos:
 
 - `Owner`;
 - `Admin`;
-- `Operator`;
-- `Viewer`.
+- `Member`.
 
 ## Regras de Implementação
 
@@ -171,3 +170,6 @@ Ao trabalhar neste projeto:
 - preserve a simplicidade do projeto.
 
 Este repositório não é apenas um produto de software. Ele também é material acadêmico e deve comunicar bem as decisões tomadas.
+
+
+

@@ -212,7 +212,7 @@ Modelo conceitual:
 
 ```text
 User
-  -> UserCompany
+  -> Membership
     -> Company
     -> Role
 ```
@@ -221,8 +221,7 @@ Papéis previstos:
 
 - `Owner`;
 - `Admin`;
-- `Operator`;
-- `Viewer`.
+- `Member`.
 
 O backend deverá validar as permissões. O frontend pode ocultar ações, mas não deve ser a única barreira de segurança.
 
@@ -269,3 +268,6 @@ Não serão usadas inicialmente:
 - banco separado por tenant.
 
 Essas tecnologias não são necessárias para resolver o problema inicial e aumentariam a complexidade do projeto.
+
+
+

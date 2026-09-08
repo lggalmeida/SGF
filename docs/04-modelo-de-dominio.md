@@ -28,9 +28,9 @@ Um usuário pode pertencer a uma ou mais empresas.
 
 Relacionamentos:
 
-- pode estar vinculado a várias empresas por meio de `UserCompany`.
+- pode estar vinculado a várias empresas por meio de `Membership`.
 
-### UserCompany
+### Membership
 
 Representa o vínculo entre um usuário e uma empresa.
 
@@ -48,8 +48,7 @@ Papéis iniciais:
 
 - `Owner`;
 - `Admin`;
-- `Operator`;
-- `Viewer`.
+- `Member`.
 
 ### Product
 
@@ -250,7 +249,7 @@ Company 1 -> N Expense
 Company 1 -> N AccountPayable
 Company 1 -> N AccountReceivable
 
-User N -> N Company, por meio de UserCompany
+User N -> N Company, por meio de Membership
 
 Product 1 -> N StockMovement
 Supplier 1 -> N StockMovement
@@ -275,3 +274,8 @@ Exemplos de entidades com `CompanyId`:
 - Insight.
 
 Entidades globais ou técnicas, como `User`, podem não possuir `CompanyId`, pois um usuário pode estar vinculado a várias empresas.
+
+
+
+
+

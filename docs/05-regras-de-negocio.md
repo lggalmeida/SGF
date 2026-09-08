@@ -28,9 +28,9 @@ RN08 - O papel `Owner` deve possuir acesso administrativo completo à empresa.
 
 RN09 - O papel `Admin` deve poder gerenciar cadastros e operações principais.
 
-RN10 - O papel `Operator` deve poder registrar operações do dia a dia, como movimentações de estoque.
+RN10 - O papel `Member` deve representar o acesso operacional inicial de um usuário comum da empresa.
 
-RN11 - O papel `Viewer` deve possuir acesso apenas de leitura.
+RN11 - Papéis mais específicos, como operador ou visualizador, só devem ser adicionados quando houver necessidade real.
 
 ## Produtos
 
@@ -132,3 +132,6 @@ RN44 - Registros importantes devem possuir data de atualização.
 RN45 - Quando possível, registrar o usuário responsável pela criação ou alteração.
 
 RN46 - Movimentações críticas, como estoque e pagamentos, devem preservar histórico.
+
+
+
