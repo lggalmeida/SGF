@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Sgf.Api.Tests;
@@ -16,7 +17,7 @@ public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Pr
     [Fact]
     public async Task GetHealth_ReturnsHealthyStatus()
     {
-        var client = _factory.CreateClient();
+        var client = CreateClient();
 
         var response = await client.GetAsync("/api/health");
         var body = await response.Content.ReadFromJsonAsync<HealthResponse>();
@@ -27,5 +28,17 @@ public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Pr
         Assert.Equal("SGF API", body.Service);
     }
 
+    private HttpClient CreateClient()
+    {
+        return _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Testing");
+            builder.UseSetting(
+                "Jwt:SigningKey",
+                "health-tests-signing-key-with-at-least-32-characters");
+        }).CreateClient();
+    }
+
     private sealed record HealthResponse(string Status, string Service, DateTimeOffset Timestamp);
 }
+

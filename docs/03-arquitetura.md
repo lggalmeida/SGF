@@ -225,6 +225,23 @@ Papéis previstos:
 
 O backend deverá validar as permissões. O frontend pode ocultar ações, mas não deve ser a única barreira de segurança.
 
+## Resolução do Tenant Atual
+
+A API possui uma abstração request-scoped para representar o contexto autenticado do tenant atual.
+
+Esse contexto contém:
+
+```text
+UserId
+CompanyId
+Role
+```
+
+Esses valores são derivados do JWT validado e revalidados no PostgreSQL por meio do relacionamento `User -> Membership -> Company`.
+
+O backend não aceita `CompanyId` enviado livremente pelo frontend para definir o tenant atual. Isso evita que uma requisição tente operar em outra empresa apenas alterando body, query string, header ou route parameter.
+
+A resolução é feita sob demanda, para que endpoints públicos como health check, cadastro e login continuem funcionando sem contexto de tenant.
 ## Banco de Dados
 
 O banco definido é PostgreSQL, acessado via Entity Framework Core.
@@ -268,6 +285,7 @@ Não serão usadas inicialmente:
 - banco separado por tenant.
 
 Essas tecnologias não são necessárias para resolver o problema inicial e aumentariam a complexidade do projeto.
+
 
 
 
