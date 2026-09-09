@@ -210,3 +210,26 @@ Frontend:
 cd src\frontend
 npm run build
 ```
+
+## Identidade - Fase F
+
+Cadastro, login, contexto do tenant, refresh com rotacao, logout e policies
+OwnerOnly/AdminOrOwner estao implementados. Os modulos operacionais e telas de
+autenticacao ainda nao foram implementados.
+Detalhes: [ADR 006](docs/adr/006-refresh-token-and-authorization.md).
+
+Antes de executar migrations ou iniciar a API, configure no terminal, na raiz:
+
+```powershell
+$env:Jwt__SigningKey = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
+$env:ASPNETCORE_ENVIRONMENT = 'Development'
+./.dotnet/dotnet.exe ef database update --project src/backend/Sgf.Infrastructure --startup-project src/backend/Sgf.Api
+./.dotnet/dotnet.exe run --project src/backend/Sgf.Api --launch-profile http
+```
+
+A chave fica apenas no processo. Preserve-a em armazenamento local seguro caso
+precise manter JWTs validos entre reinicios. Nunca a versione.
+O ASP.NET Core nao carrega `.env` automaticamente; o Compose usa esse arquivo para o banco.
+Endpoints adicionais: POST /api/auth/register, /login, /refresh, /logout e GET /api/auth/me.
+Access token: 15 minutos, Bearer. Refresh: 7 dias, cookie HttpOnly.
+No frontend futuro, usar credentials: include e localhost em ambos os enderecos.

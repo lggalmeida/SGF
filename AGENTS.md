@@ -133,6 +133,20 @@ Regras obrigatórias:
 
 Não implementar banco por tenant ou schema por tenant no escopo inicial.
 
+
+### Isolamento de Dados Tenant-Scoped
+
+Para futuras entidades de negócio pertencentes a uma empresa, como `Product`, `Supplier`, `StockMovement` e `FinancialTransaction`:
+
+- implementar `ICompanyScopedEntity`;
+- possuir `CompanyId` como identificador da empresa dona do registro;
+- obter `CompanyId` a partir do `ICurrentTenantContext`, nunca livremente do body, query string, header ou rota;
+- deixar o backend definir `CompanyId` na criação;
+- impedir alteração arbitrária de `CompanyId` após a criação;
+- garantir que alteração e exclusão respeitem o tenant atual;
+- cobrir isolamento multi-tenant com testes, incluindo leitura, consulta por ID, criação, alteração e exclusão.
+
+O uso de `IgnoreQueryFilters()` deve ser excepcional, justificado e revisado com atenção, pois pode quebrar isolamento entre empresas.
 ## Autenticação e Autorização
 
 A estratégia planejada é autenticação com JWT e autorização baseada em vínculo entre usuário e empresa.
@@ -150,6 +164,12 @@ Papéis iniciais previstos:
 - `Member`.
 
 ## Regras de Implementação
+
+- Refresh tokens devem ser opacos, persistidos somente por hash e entregues em cookie HttpOnly.
+- Rotacao deve revogar e substituir atomicamente, protegendo tambem uso concorrente.
+- Privilegios de empresa devem usar OwnerOnly/AdminOrOwner com ICurrentTenantContext revalidado; nao confiar apenas na role do JWT.
+- Cookies de autenticacao exigem revisao de SameSite, Secure, Origin e CORS; nunca usar AllowAnyOrigin com AllowCredentials.
+- Nunca registrar senhas, tokens, cookies de autenticacao ou hashes em logs.
 
 - Não implementar funcionalidades fora do MVP sem alinhar antes.
 - Não remover decisões documentadas sem atualizar a documentação correspondente.
@@ -170,6 +190,7 @@ Ao trabalhar neste projeto:
 - preserve a simplicidade do projeto.
 
 Este repositório não é apenas um produto de software. Ele também é material acadêmico e deve comunicar bem as decisões tomadas.
+
 
 
 

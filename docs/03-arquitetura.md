@@ -242,6 +242,17 @@ Esses valores são derivados do JWT validado e revalidados no PostgreSQL por mei
 O backend não aceita `CompanyId` enviado livremente pelo frontend para definir o tenant atual. Isso evita que uma requisição tente operar em outra empresa apenas alterando body, query string, header ou route parameter.
 
 A resolução é feita sob demanda, para que endpoints públicos como health check, cadastro e login continuem funcionando sem contexto de tenant.
+## Isolamento de Dados Tenant-Scoped
+
+Futuras entidades de negócio pertencentes a uma empresa deverão implementar `ICompanyScopedEntity` e possuir `CompanyId`.
+
+Para leitura, o Entity Framework Core aplicará Global Query Filters em entidades tenant-scoped. Assim, uma consulta como `db.Products.ToListAsync()` deverá considerar automaticamente a empresa atual.
+
+Para escrita, o backend deverá definir o `CompanyId` na criação usando o contexto autenticado, e operações de alteração ou exclusão deverão validar que o registro pertence ao tenant atual.
+
+A ausência de tenant válido deve falhar de forma segura: entidades tenant-scoped não devem retornar dados e não devem permitir escrita.
+
+`IgnoreQueryFilters()` deve ser reservado para casos excepcionais de manutenção ou administração e precisa de revisão cuidadosa.
 ## Banco de Dados
 
 O banco definido é PostgreSQL, acessado via Entity Framework Core.
@@ -285,6 +296,7 @@ Não serão usadas inicialmente:
 - banco separado por tenant.
 
 Essas tecnologias não são necessárias para resolver o problema inicial e aumentariam a complexidade do projeto.
+
 
 
 

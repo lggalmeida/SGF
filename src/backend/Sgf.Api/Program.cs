@@ -1,16 +1,20 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Cryptography;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Sgf.Api.Authorization;
 using Sgf.Api.Identity;
 using Sgf.Application.Identity;
+using Sgf.Domain.Companies;
 using Sgf.Infrastructure;
 using Sgf.Infrastructure.Database;
 using Sgf.Infrastructure.Identity.Authentication;
-using Microsoft.IdentityModel.Tokens;
 
 JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
@@ -21,6 +25,8 @@ const string DevelopmentCorsPolicy = "DevelopmentCors";
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentTenantContext, CurrentTenantContext>();
+builder.Services.AddScoped<IAuthorizationHandler, CurrentTenantRoleAuthorizationHandler>();
+
 var jwtOptions = builder.Configuration
     .GetSection(JwtOptions.SectionName)
     .Get<JwtOptions>() ?? new JwtOptions();
@@ -36,6 +42,25 @@ if (!hasValidSigningKey && !builder.Environment.IsEnvironment("Testing"))
 var signingKeyBytes = hasValidSigningKey
     ? Encoding.UTF8.GetBytes(jwtOptions.SigningKey)
     : RandomNumberGenerator.GetBytes(64);
+
+var refreshOptions = builder.Configuration.GetSection(RefreshTokenOptions.SectionName)
+    .Get<RefreshTokenOptions>() ?? new RefreshTokenOptions();
+if (string.IsNullOrWhiteSpace(jwtOptions.Issuer)
+    || string.IsNullOrWhiteSpace(jwtOptions.Audience)
+    || jwtOptions.AccessTokenMinutes is < 1 or > 60
+    || refreshOptions.Days is < 1 or > 30
+    || string.IsNullOrWhiteSpace(refreshOptions.CookieName)
+    || refreshOptions.CookieName.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '_'))
+{
+    throw new InvalidOperationException("Invalid JWT or refresh token configuration.");
+}
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+if (allowedOrigins.Any(origin => !Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+    || (uri.Scheme != "http" && uri.Scheme != "https") || origin.Contains('*')))
+{
+    throw new InvalidOperationException("CORS requires explicit HTTP/HTTPS origins.");
+}
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -57,29 +82,52 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(CurrentUserAuthorizationPolicies.OwnerOnly, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new CurrentTenantRoleRequirement(MembershipRole.Owner));
+    });
+
+    options.AddPolicy(CurrentUserAuthorizationPolicies.AdminOrOwner, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new CurrentTenantRoleRequirement(MembershipRole.Owner, MembershipRole.Admin));
+    });
+});
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(DevelopmentCorsPolicy, policy =>
     {
-        var allowedOrigins = builder.Configuration
-            .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>() ?? [];
-
         policy
             .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+app.UseCors(DevelopmentCorsPolicy);
+app.Use(async (context, next) =>
 {
-    app.UseCors(DevelopmentCorsPolicy);
-}
+    if (context.Request.Path.StartsWithSegments("/api/auth"))
+    {
+        context.Response.Headers.CacheControl = "no-store";
+        // Reject browser requests from origins outside the configured frontend.
+        if (HttpMethods.IsPost(context.Request.Method)
+            && context.Request.Headers.TryGetValue("Origin", out var origin)
+            && !allowedOrigins.Contains(origin.ToString(), StringComparer.Ordinal))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
+    }
+    await next(context);
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -150,7 +198,10 @@ app.MapPost("/api/auth/register", async (
 
 app.MapPost("/api/auth/login", async (
     LoginUserRequest request,
+    HttpResponse response,
     ILoginUseCase loginUseCase,
+    IOptions<RefreshTokenOptions> refreshTokenOptions,
+    IWebHostEnvironment environment,
     CancellationToken cancellationToken) =>
 {
     var result = await loginUseCase.ExecuteAsync(
@@ -159,6 +210,14 @@ app.MapPost("/api/auth/login", async (
 
     if (result.Succeeded && result.Value is not null)
     {
+        if (result.RefreshToken is not null && result.RefreshTokenExpiresAt.HasValue)
+        {
+            response.Cookies.Append(
+                refreshTokenOptions.Value.CookieName,
+                result.RefreshToken,
+                CreateRefreshTokenCookieOptions(result.RefreshTokenExpiresAt.Value, environment));
+        }
+
         return Results.Ok(result.Value);
     }
 
@@ -188,6 +247,56 @@ app.MapPost("/api/auth/login", async (
     return Results.Json(problemDetails, statusCode: statusCode);
 });
 
+app.MapPost("/api/auth/refresh", async (
+    HttpRequest request,
+    HttpResponse response,
+    IRefreshTokenUseCase refreshTokenUseCase,
+    IOptions<RefreshTokenOptions> refreshTokenOptions,
+    IWebHostEnvironment environment,
+    CancellationToken cancellationToken) =>
+{
+    var cookieName = refreshTokenOptions.Value.CookieName;
+    var refreshToken = request.Cookies[cookieName];
+
+    var result = await refreshTokenUseCase.ExecuteAsync(
+        new RefreshTokenRequest(refreshToken ?? string.Empty),
+        cancellationToken);
+
+    if (!result.Succeeded || result.Value is null)
+    {
+        response.Cookies.Delete(cookieName, CreateExpiredRefreshTokenCookieOptions(environment));
+        return Results.Unauthorized();
+    }
+
+    if (result.RefreshToken is not null && result.RefreshTokenExpiresAt.HasValue)
+    {
+        response.Cookies.Append(
+            cookieName,
+            result.RefreshToken,
+            CreateRefreshTokenCookieOptions(result.RefreshTokenExpiresAt.Value, environment));
+    }
+
+    return Results.Ok(result.Value);
+});
+
+app.MapPost("/api/auth/logout", async (
+    HttpRequest request,
+    HttpResponse response,
+    ILogoutUseCase logoutUseCase,
+    IOptions<RefreshTokenOptions> refreshTokenOptions,
+    IWebHostEnvironment environment,
+    CancellationToken cancellationToken) =>
+{
+    var cookieName = refreshTokenOptions.Value.CookieName;
+    await logoutUseCase.ExecuteAsync(
+        new LogoutRequest(request.Cookies[cookieName]),
+        cancellationToken);
+
+    response.Cookies.Delete(cookieName, CreateExpiredRefreshTokenCookieOptions(environment));
+
+    return Results.NoContent();
+});
+
 app.MapGet("/api/auth/me", async (
     IGetCurrentUserUseCase getCurrentUserUseCase,
     CancellationToken cancellationToken) =>
@@ -201,6 +310,32 @@ app.MapGet("/api/auth/me", async (
 
 app.Run();
 
+static CookieOptions CreateRefreshTokenCookieOptions(
+    DateTimeOffset expiresAt,
+    IWebHostEnvironment environment)
+{
+    return new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = !environment.IsDevelopment() && !environment.IsEnvironment("Testing"),
+        SameSite = SameSiteMode.Lax,
+        Expires = expiresAt,
+        Path = "/api/auth"
+    };
+}
+
+static CookieOptions CreateExpiredRefreshTokenCookieOptions(IWebHostEnvironment environment)
+{
+    return new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = !environment.IsDevelopment() && !environment.IsEnvironment("Testing"),
+        SameSite = SameSiteMode.Lax,
+        Expires = DateTimeOffset.UnixEpoch,
+        Path = "/api/auth"
+    };
+}
+
 public sealed record LoginUserRequest(
     string Email,
     string Password);
@@ -212,9 +347,3 @@ public sealed record RegisterUserAndCompanyRequest(
     string CompanyName);
 
 public partial class Program;
-
-
-
-
-
-

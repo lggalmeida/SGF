@@ -1,12 +1,8 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Sgf.Application.Identity;
-using Sgf.Domain.Companies;
 using Sgf.Infrastructure.Database;
 
 namespace Sgf.Infrastructure.Identity.Authentication;
@@ -17,18 +13,26 @@ public sealed class LoginService : ILoginUseCase
         LoginErrorCode.InvalidCredentials,
         "Invalid credentials.");
 
+    private readonly AccessTokenFactory _accessTokenFactory;
     private readonly SgfDbContext _dbContext;
     private readonly JwtOptions _jwtOptions;
+    private readonly RefreshTokenGenerator _refreshTokenGenerator;
+    private readonly RefreshTokenOptions _refreshTokenOptions;
     private readonly UserManager<ApplicationUser> _userManager;
 
     public LoginService(
         SgfDbContext dbContext,
         IOptions<JwtOptions> jwtOptions,
+        IOptions<RefreshTokenOptions> refreshTokenOptions,
+        RefreshTokenGenerator refreshTokenGenerator,
         UserManager<ApplicationUser> userManager)
     {
         _dbContext = dbContext;
         _jwtOptions = jwtOptions.Value;
+        _refreshTokenOptions = refreshTokenOptions.Value;
+        _refreshTokenGenerator = refreshTokenGenerator;
         _userManager = userManager;
+        _accessTokenFactory = new AccessTokenFactory(_jwtOptions);
     }
 
     public async Task<LoginResult> ExecuteAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -77,7 +81,7 @@ public sealed class LoginService : ILoginUseCase
                 "company_selection_required"));
         }
 
-        if (!IsJwtConfigurationValid())
+        if (!IsConfigurationValid())
         {
             return LoginResult.Failure(new LoginError(
                 LoginErrorCode.ConfigurationInvalid,
@@ -85,49 +89,39 @@ public sealed class LoginService : ILoginUseCase
         }
 
         var membership = memberships.Single();
-        var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes);
-        var accessToken = CreateAccessToken(user, membership, expiresAt);
-
-        return LoginResult.Success(new LoginResponse(
-            accessToken,
-            "Bearer",
-            expiresAt,
+        var accessToken = _accessTokenFactory.Create(user, membership);
+        var refreshTokenValue = _refreshTokenGenerator.CreateToken();
+        var now = DateTimeOffset.UtcNow;
+        var refreshToken = new RefreshToken(
             user.Id,
             membership.CompanyId,
-            membership.Role.ToString()));
+            _refreshTokenGenerator.Hash(refreshTokenValue),
+            now,
+            now.AddDays(_refreshTokenOptions.Days));
+
+        _dbContext.RefreshTokens.Add(refreshToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return LoginResult.Success(
+            new LoginResponse(
+                accessToken.AccessToken,
+                accessToken.TokenType,
+                accessToken.ExpiresAt,
+                accessToken.UserId,
+                accessToken.CompanyId,
+                accessToken.Role),
+            refreshTokenValue,
+            refreshToken.ExpiresAt);
     }
 
-    private string CreateAccessToken(ApplicationUser user, Membership membership, DateTimeOffset expiresAt)
-    {
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, user.Id),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
-            new(SgfClaimTypes.CompanyId, membership.CompanyId.ToString()),
-            new(ClaimTypes.Role, membership.Role.ToString())
-        };
-
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SigningKey));
-        var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: _jwtOptions.Issuer,
-            audience: _jwtOptions.Audience,
-            claims: claims,
-            expires: expiresAt.UtcDateTime,
-            signingCredentials: credentials);
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    private bool IsJwtConfigurationValid()
+    private bool IsConfigurationValid()
     {
         return !string.IsNullOrWhiteSpace(_jwtOptions.Issuer)
             && !string.IsNullOrWhiteSpace(_jwtOptions.Audience)
             && !string.IsNullOrWhiteSpace(_jwtOptions.SigningKey)
             && Encoding.UTF8.GetByteCount(_jwtOptions.SigningKey) >= 32
-            && _jwtOptions.AccessTokenMinutes > 0;
+            && _jwtOptions.AccessTokenMinutes > 0
+            && _refreshTokenOptions.Days > 0
+            && !string.IsNullOrWhiteSpace(_refreshTokenOptions.CookieName);
     }
 }
-

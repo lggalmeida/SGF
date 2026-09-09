@@ -33,13 +33,19 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<SgfDbContext>();
 
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<RefreshTokenOptions>(configuration.GetSection(RefreshTokenOptions.SectionName));
+        services.AddScoped<RefreshTokenGenerator>();
         services.AddScoped<IRegisterCompanyOwnerUseCase, RegisterCompanyOwnerService>();
         services.AddScoped<ILoginUseCase, LoginService>();
         services.AddScoped<IGetCurrentUserUseCase, GetCurrentUserService>();
+        services.AddScoped<IRefreshTokenUseCase, RefreshTokenService>();
+        services.AddScoped<ILogoutUseCase, RefreshTokenService>();
+        services.AddScoped<ICurrentUserAuthorizationService, CurrentUserAuthorizationService>();
 
         return services;
     }
 }
+
 
 
 

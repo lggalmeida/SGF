@@ -1,10 +1,10 @@
 namespace Sgf.Application.Identity;
 
-public sealed class LoginResult
+public sealed class RefreshTokenResult
 {
-    private LoginResult(
-        LoginResponse? value,
-        LoginError? error,
+    private RefreshTokenResult(
+        RefreshTokenResponse? value,
+        string? error,
         string? refreshToken,
         DateTimeOffset? refreshTokenExpiresAt)
     {
@@ -16,18 +16,18 @@ public sealed class LoginResult
 
     public bool Succeeded => Error is null;
 
-    public LoginResponse? Value { get; }
+    public RefreshTokenResponse? Value { get; }
 
-    public LoginError? Error { get; }
+    public string? Error { get; }
 
     public string? RefreshToken { get; }
 
     public DateTimeOffset? RefreshTokenExpiresAt { get; }
 
-    public static LoginResult Success(
-        LoginResponse value,
+    public static RefreshTokenResult Success(
+        RefreshTokenResponse value,
         string refreshToken,
         DateTimeOffset refreshTokenExpiresAt) => new(value, null, refreshToken, refreshTokenExpiresAt);
 
-    public static LoginResult Failure(LoginError error) => new(null, error, null, null);
+    public static RefreshTokenResult Failure(string error) => new(null, error, null, null);
 }

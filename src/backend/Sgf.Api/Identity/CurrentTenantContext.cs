@@ -77,6 +77,8 @@ public sealed class CurrentTenantContext : ICurrentTenantContext
             return null;
         }
 
+        _dbContext.UseCurrentCompany(membership.CompanyId);
+
         return new CurrentTenant(
             user.Id,
             membership.CompanyId,
@@ -86,3 +88,4 @@ public sealed class CurrentTenantContext : ICurrentTenantContext
             membership.Company.Name);
     }
 }
+
