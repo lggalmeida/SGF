@@ -10,6 +10,7 @@ namespace Sgf.Infrastructure.Identity.Registration;
 public sealed class RegisterCompanyOwnerService : IRegisterCompanyOwnerUseCase
 {
     private const int MaxUserNameLength = 200;
+    private const int MaxCompanyNameLength = 200;
 
     private readonly SgfDbContext _dbContext;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -120,6 +121,10 @@ public sealed class RegisterCompanyOwnerService : IRegisterCompanyOwnerUseCase
         if (string.IsNullOrWhiteSpace(request.CompanyName))
         {
             errors.Add("Company name is required.");
+        }
+        else if (request.CompanyName.Trim().Length > MaxCompanyNameLength)
+        {
+            errors.Add($"Company name must be at most {MaxCompanyNameLength} characters.");
         }
 
         return errors;

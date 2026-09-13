@@ -135,7 +135,7 @@ public sealed class RegisterUserAndCompanyEndpointTests
     }
 
     [Fact]
-    public async Task Register_WhenCompanyPersistenceFails_DoesNotKeepPartialUser()
+    public async Task Register_WithCompanyNameOverLimit_ReturnsValidationBeforePersistence()
     {
         var email = "rollback@example.com";
         var request = ValidRequest(email) with
@@ -147,7 +147,39 @@ public sealed class RegisterUserAndCompanyEndpointTests
         var response = await client.PostAsJsonAsync("/api/auth/register", request);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("Company name must be at most 200 characters.", await response.Content.ReadAsStringAsync());
         await AssertNoRegistrationWasCreated(email);
+    }
+
+    [Fact]
+    public async Task Register_WithCompanyNameAtLimit_Succeeds()
+    {
+        var request = ValidRequest("company-limit@example.com") with { CompanyName = new string('A', 200) };
+        var response = await _factory.CreateClient().PostAsJsonAsync("/api/auth/register", request);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("Companies")]
+    [InlineData("Memberships")]
+    public async Task Register_WhenDatabaseRejectsInsert_RollsBackEntireRegistration(string table)
+    {
+        // This constraint exists only in this fixture's disposable database.
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SgfDbContext>();
+            var sql = table == "Companies"
+                ? "ALTER TABLE \"Companies\" ADD CONSTRAINT \"TestRejectInsert\" CHECK (false)"
+                : "ALTER TABLE \"Memberships\" ADD CONSTRAINT \"TestRejectInsert\" CHECK (false)";
+            await db.Database.ExecuteSqlRawAsync(sql);
+        }
+        var response = await _factory.CreateClient().PostAsJsonAsync("/api/auth/register", ValidRequest("real-rollback@example.com"));
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Registration could not be completed.", body);
+        Assert.DoesNotContain("TestRejectInsert", body);
+        Assert.DoesNotContain("exception", body, StringComparison.OrdinalIgnoreCase);
+        await AssertNoRegistrationWasCreated("real-rollback@example.com");
     }
 
     public async Task InitializeAsync()
@@ -191,14 +223,10 @@ public sealed class RegisterUserAndCompanyApiFactory : WebApplicationFactory<Pro
     private readonly string _connectionString =
         $"Host=127.0.0.1;Port=15432;Database=sgf_api_tests_{Guid.NewGuid():N};Username=sgf_user;Password=sgf_dev_password";
 
-    public RegisterUserAndCompanyApiFactory()
-    {
-        Environment.SetEnvironmentVariable("Jwt__SigningKey", JwtSigningKey);
-    }
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseSetting("Jwt:SigningKey", JwtSigningKey);
         builder.ConfigureAppConfiguration(configuration =>
         {
             configuration.AddInMemoryCollection(new Dictionary<string, string?>

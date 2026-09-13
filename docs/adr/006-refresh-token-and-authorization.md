@@ -61,8 +61,10 @@ JWT Member. Tenant invalido nunca satisfaz policies. Nenhum endpoint ficticio fo
 ## Configuracao e limites
 
 Jwt:SigningKey deve ser configurada fora do Git, com pelo menos 32 bytes aleatorios.
-Development/Production falham na inicializacao se faltar chave; somente Testing
-permite chave efemera. Issuer/Audience devem existir, AccessTokenMinutes aceita
+Desde a F.1, todos os ambientes, inclusive Testing, exigem chave explicita valida;
+nao ha fallback efemero. Factories configuram a chave de testes por host, usando
+a mesma configuracao na emissao e validacao, sem alterar ambiente global.
+Issuer/Audience devem existir, AccessTokenMinutes aceita
 1 a 60 e RefreshToken:Days aceita 1 a 30. Defaults: 15 minutos e 7 dias.
 Nao ha IsActive em ApplicationUser; usuario removido e rejeitado. Inativacao
 do acesso existente acontece por Membership ou Company.

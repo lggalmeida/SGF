@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -34,14 +33,12 @@ var jwtOptions = builder.Configuration
 var hasValidSigningKey = !string.IsNullOrWhiteSpace(jwtOptions.SigningKey)
     && Encoding.UTF8.GetByteCount(jwtOptions.SigningKey) >= 32;
 
-if (!hasValidSigningKey && !builder.Environment.IsEnvironment("Testing"))
+if (!hasValidSigningKey)
 {
     throw new InvalidOperationException("JWT signing key must be configured with at least 32 bytes.");
 }
 
-var signingKeyBytes = hasValidSigningKey
-    ? Encoding.UTF8.GetBytes(jwtOptions.SigningKey)
-    : RandomNumberGenerator.GetBytes(64);
+var signingKeyBytes = Encoding.UTF8.GetBytes(jwtOptions.SigningKey);
 
 var refreshOptions = builder.Configuration.GetSection(RefreshTokenOptions.SectionName)
     .Get<RefreshTokenOptions>() ?? new RefreshTokenOptions();
@@ -184,16 +181,17 @@ app.MapPost("/api/auth/register", async (
     var problemDetails = new ProblemDetails
     {
         Title = error.Message,
-        Status = error.Code == RegistrationErrorCode.EmailAlreadyRegistered
-            ? StatusCodes.Status409Conflict
-            : StatusCodes.Status400BadRequest
+        Status = error.Code switch
+        {
+            RegistrationErrorCode.EmailAlreadyRegistered => StatusCodes.Status409Conflict,
+            RegistrationErrorCode.ValidationFailed => StatusCodes.Status400BadRequest,
+            _ => StatusCodes.Status500InternalServerError
+        }
     };
 
     problemDetails.Extensions["errors"] = error.Details;
 
-    return error.Code == RegistrationErrorCode.EmailAlreadyRegistered
-        ? Results.Conflict(problemDetails)
-        : Results.BadRequest(problemDetails);
+    return Results.Json(problemDetails, statusCode: problemDetails.Status);
 });
 
 app.MapPost("/api/auth/login", async (

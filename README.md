@@ -105,131 +105,153 @@ O arquivo `AGENTS.md` contém orientações para futuros agentes e colaboradores
 
 ## Estado Atual
 
-Neste momento, o projeto possui a fundação técnica inicial:
+A fundacao e as fases A-F de identidade estao implementadas, com hardening F.1:
 
-- backend ASP.NET Core Web API;
-- frontend React com TypeScript;
-- PostgreSQL via Docker Compose;
-- Entity Framework Core configurado;
-- endpoint `GET /api/health`;
-- endpoint `GET /api/health/database`;
-- teste básico da API;
-- teste básico da camada de aplicação.
+- cadastro de usuario, empresa e Membership Owner em transacao;
+- login JWT, refresh token com rotacao e logout;
+- contexto de tenant revalidado e policies OwnerOnly/AdminOrOwner;
+- protecao reutilizavel de leitura e escrita multi-tenant;
+- PostgreSQL local via Docker e migrations do EF Core;
+- frontend React/TypeScript com login, cadastro e pagina de sessao protegida (fase G);
+- testes em Sgf.Api.Tests, Sgf.Application.Tests e Sgf.Infrastructure.Tests.
 
-Nenhuma funcionalidade de negócio foi implementada ainda.
+Produtos, estoque, financeiro e analytics ainda nao foram implementados.
+Decisoes de autenticacao: [ADR 006](docs/adr/006-refresh-token-and-authorization.md).
 
-## Como Executar Localmente
+## Execucao Local
 
-### Pré-requisitos
+Siga a sequencia abaixo em PowerShell 7, a partir da raiz do clone SGF.
+Use o mesmo terminal para os passos 2 a 7, pois as variaveis pertencem ao processo.
 
-- .NET SDK 10;
-- Node.js;
-- npm;
-- Docker Desktop.
+### 1. Pre-requisitos
 
-### SDK .NET
+- Git;
+- .NET SDK 10.0.400 ou compativel com `global.json`;
+- Node.js 22.12+ (ou 24) e npm;
+- Docker Desktop iniciado, com containers Linux;
+- PowerShell 7.
 
-O projeto possui um `global.json` apontando para o SDK .NET 10 usado na fundacao tecnica.
+A pasta `.dotnet/` desta maquina nao e versionada. Em um clone novo, instale o SDK.
+Se ja utiliza o SDK local, substitua `dotnet` por `./.dotnet/dotnet.exe` nos comandos
+executados na raiz. Confira com `dotnet --version`, `node --version` e `docker version`.
 
-Nesta maquina, o SDK .NET 10 tambem foi instalado localmente em `.dotnet/`, pasta ignorada pelo Git. Se voce instalar o SDK .NET 10 globalmente no Windows, tambem podera usar `dotnet` normalmente.
-
-### 1. Subir o PostgreSQL
-
-Na raiz do projeto:
-
-```powershell
-docker compose up -d
-```
-
-O PostgreSQL ficará disponível em:
-
-```text
-Host: 127.0.0.1
-Porta: 15432
-Banco: sgf_dev
-Usuario: sgf_user
-```
-
-A senha usada é apenas local de desenvolvimento e está documentada em `.env.example`.
-
-### 2. Executar o Backend
+### 2. Configurar o ambiente
 
 ```powershell
-cd src\backend
-..\..\.dotnet\dotnet.exe run --project Sgf.Api\Sgf.Api.csproj --launch-profile http
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+$env:ASPNETCORE_ENVIRONMENT = 'Development'
 ```
 
-A API ficará disponível em:
+O Compose usa `.env`; ASP.NET Core nao carrega esse arquivo automaticamente.
+Os valores padrao de PostgreSQL sao exclusivos de desenvolvimento e combinam com
+`appsettings.Development.json`: host 127.0.0.1, porta 15432, banco sgf_dev,
+usuario sgf_user. Se alterar porta/credenciais, ajuste tambem
+`ConnectionStrings__DefaultConnection` no ambiente. Os testes atualmente usam os
+valores locais padrao e criam seus proprios bancos; nao aponte testes para producao.
 
-```text
-http://localhost:5206
-```
-
-Endpoints de validação:
-
-```text
-GET http://localhost:5206/api/health
-GET http://localhost:5206/api/health/database
-```
-
-### 3. Executar o Frontend
-
-Em outro terminal:
-
-```powershell
-cd src\frontend
-npm install
-npm run dev
-```
-
-O frontend ficará disponível normalmente em:
-
-```text
-http://localhost:5173
-```
-
-ou:
-
-```text
-http://127.0.0.1:5173
-```
-
-### 4. Executar Builds e Testes
-
-Backend:
-
-```powershell
-cd src\backend
-..\..\.dotnet\dotnet.exe build Sgf.sln
-..\..\.dotnet\dotnet.exe test Sgf.sln
-```
-
-Frontend:
-
-```powershell
-cd src\frontend
-npm run build
-```
-
-## Identidade - Fase F
-
-Cadastro, login, contexto do tenant, refresh com rotacao, logout e policies
-OwnerOnly/AdminOrOwner estao implementados. Os modulos operacionais e telas de
-autenticacao ainda nao foram implementados.
-Detalhes: [ADR 006](docs/adr/006-refresh-token-and-authorization.md).
-
-Antes de executar migrations ou iniciar a API, configure no terminal, na raiz:
+### 3. Configurar a chave JWT antes de migrations ou API
 
 ```powershell
 $env:Jwt__SigningKey = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
-$env:ASPNETCORE_ENVIRONMENT = 'Development'
-./.dotnet/dotnet.exe ef database update --project src/backend/Sgf.Infrastructure --startup-project src/backend/Sgf.Api
-./.dotnet/dotnet.exe run --project src/backend/Sgf.Api --launch-profile http
 ```
 
-A chave fica apenas no processo. Preserve-a em armazenamento local seguro caso
-precise manter JWTs validos entre reinicios. Nunca a versione.
-O ASP.NET Core nao carrega `.env` automaticamente; o Compose usa esse arquivo para o banco.
-Endpoints adicionais: POST /api/auth/register, /login, /refresh, /logout e GET /api/auth/me.
-Access token: 15 minutos, Bearer. Refresh: 7 dias, cookie HttpOnly.
-No frontend futuro, usar credentials: include e localhost em ambos os enderecos.
+Nao exiba nem versione a chave. Esse comando fornece uma chave somente para o
+terminal e seus processos. Para manter JWTs entre reinicios, reutilize uma chave
+armazenada em local seguro. Gerar outra chave invalida access tokens anteriores.
+O placeholder de `.env.example` nao e uma chave para uso real.
+
+Todos os ambientes, inclusive Testing, exigem chave explicita de pelo menos
+32 bytes. As factories de teste fornecem uma chave exclusiva de testes, sem
+alterar variaveis globais e sem fallback aleatorio.
+
+### 4. Iniciar PostgreSQL
+
+```powershell
+docker compose up -d --wait
+docker compose ps
+```
+
+A publicacao deve mostrar `127.0.0.1:15432->5432/tcp`.
+O volume preserva dados entre reinicios; nao use `docker compose down -v` para
+apenas reiniciar o sistema.
+
+### 5. Restaurar projetos e ferramenta EF
+
+```powershell
+dotnet restore src/backend/Sgf.sln
+dotnet tool restore
+```
+
+A versao da ferramenta `dotnet-ef` e definida no manifesto `dotnet-tools.json`
+na raiz. Nenhuma instalacao global da ferramenta e necessaria.
+
+### 6. Aplicar migrations
+
+```powershell
+dotnet ef database update --project src/backend/Sgf.Infrastructure --startup-project src/backend/Sgf.Api
+```
+
+O comando cria as tabelas de identidade, Companies, Memberships e RefreshTokens.
+A F.1 nao acrescenta schema ou migration.
+
+### 7. Executar API
+
+```powershell
+dotnet run --project src/backend/Sgf.Api --launch-profile http
+```
+
+API: http://localhost:5206. Validacao: `GET /api/health` e
+`GET /api/health/database`. Autenticacao: `POST /api/auth/register`,
+`POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`
+e `GET /api/auth/me`.
+
+### 8. Executar frontend atual
+
+Em outro terminal, a partir da raiz:
+
+```powershell
+cd src/frontend
+npm ci
+npm run dev -- --host localhost --port 5173 --strictPort
+```
+
+Abra http://localhost:5173/login. Cadastro em /register e sessao protegida em /app.
+A URL padrao do backend e http://localhost:5206; `VITE_API_BASE_URL` permite
+configura-la. Use localhost nos dois enderecos para preservar comportamento
+same-site dos cookies. O exemplo de configuracao esta em src/frontend/.env.example.
+Detalhes da sessao e testes: [Frontend de autenticacao](docs/08-frontend-autenticacao.md).
+
+### 9. Executar builds e testes
+
+Com PostgreSQL ativo, em outro terminal na raiz (pare a API antes de recompilar
+caso o Windows informe arquivos em uso):
+
+```powershell
+dotnet build src/backend/Sgf.sln
+dotnet test src/backend/Sgf.sln --no-build
+npm --prefix src/frontend run build
+```
+
+A solucao inclui `Sgf.Api.Tests`, `Sgf.Application.Tests` e
+`Sgf.Infrastructure.Tests`. Integracao usa PostgreSQL real e migrations em bancos
+temporarios. Os testes de isolamento usam entidade exclusiva de testes, verificam
+SQL de UPDATE/DELETE e removem os bancos criados ao terminar, inclusive em falhas.
+
+Testes de navegador da fase G (API e PostgreSQL devem estar ativos):
+
+```powershell
+cd src/frontend
+npx playwright install chromium
+npm test
+npm run typecheck
+```
+
+O Playwright inicia o Vite quando necessario. Alternativa no Windows com Edge
+instalado: defina `$env:PLAYWRIGHT_CHANNEL = 'msedge'` e dispense o download de Chromium.
+Os testes criam contas identificadas por `frontend-...@example.com` no banco local.
+
+## Pendencia Antes de Publicacao Publica
+
+Rate limiting de login permanece como divida tecnica registrada pela auditoria.
+Nao foi implementado na F.1. Iniciar o frontend nao significa autorizar publicacao
+publica sem essa protecao e sem configuracao de HTTPS e segredos de producao.

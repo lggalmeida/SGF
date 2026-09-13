@@ -1,37 +1,12 @@
-:root {
-  color: #0f172a;
-  background: #f8fafc;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  line-height: 1.5;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-#root {
-  min-height: 100vh;
-}
-
-body {
-  margin: 0;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-h1 {
-  font-size: 56px;
-  line-height: 1;
-  margin: 0;
-}
-
-p {
-  margin: 0;
-}
+:root { font-family: Inter, "Segoe UI", Arial, sans-serif; color: #202c29; background: #f3f5f4; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; line-height: 1.5; }
+* { box-sizing: border-box; letter-spacing: 0; }
+body { margin: 0; min-width: 280px; }
+button, input { font: inherit; }
+button, a, input { -webkit-tap-highlight-color: transparent; }
+a { color: #14664d; text-underline-offset: 3px; }
+a:hover { color: #0b4936; }
+button { cursor: pointer; }
+button:disabled { cursor: wait; opacity: .7; }
+:focus-visible { outline: 3px solid #b17815; outline-offset: 3px; }
+h1, p { margin: 0; }
+h1 { font-size: 28px; line-height: 1.25; font-weight: 650; overflow-wrap: anywhere; }

@@ -1,17 +1,26 @@
-export type ApiHealthResponse = {
-  status: string
-  service: string
-  timestamp: string
+const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5206').replace(/\/$/, '')
+
+export class ApiError extends Error {
+  status: number
+  code?: string
+  constructor(status: number, code?: string) {
+    super('Request failed')
+    this.status = status
+    this.code = code
+  }
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5206'
-
-export async function getApiHealth(): Promise<ApiHealthResponse> {
-  const response = await fetch(`${apiBaseUrl}/api/health`)
-
+export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if (!path.startsWith('/api/')) throw new Error('Invalid API path')
+  const response = await fetch(baseUrl + path, {
+    ...init,
+    credentials: init.credentials ?? 'omit',
+    signal: init.signal ?? AbortSignal.timeout(15000),
+    headers: { ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...init.headers },
+  })
   if (!response.ok) {
-    throw new Error('API health check failed.')
+    const problem = await response.json().catch(() => ({}))
+    throw new ApiError(response.status, problem.code)
   }
-
-  return response.json()
+  return response.status === 204 ? undefined as T : response.json()
 }

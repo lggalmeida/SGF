@@ -1,37 +1,37 @@
-import { useQuery } from '@tanstack/react-query'
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { AuthProvider, useAuth } from './features/auth/AuthProvider'
+import { AuthForm, SessionPage } from './features/auth/AuthPages'
 import './App.css'
-import { getApiHealth } from './lib/api'
 
-function App() {
-  const healthQuery = useQuery({
-    queryKey: ['api-health'],
-    queryFn: getApiHealth,
-    retry: false,
-  })
-
-  return (
-    <main className="app-shell">
-      <section className="status-panel" aria-labelledby="app-title">
-        <p className="eyebrow">Fundacao tecnica</p>
-        <h1 id="app-title">SGF</h1>
-        <p className="subtitle">Sistema de Gestao Facilitada</p>
-
-        <div className="status-card">
-          <span className="status-label">Backend</span>
-          <strong>
-            {healthQuery.isLoading && 'Verificando...'}
-            {healthQuery.isError && 'Indisponivel'}
-            {healthQuery.data && healthQuery.data.status}
-          </strong>
-          <small>
-            {healthQuery.data
-              ? `${healthQuery.data.service} respondeu com sucesso.`
-              : 'Aguardando resposta de /api/health.'}
-          </small>
-        </div>
-      </section>
-    </main>
-  )
+function Gate({ authenticated }: { authenticated: boolean }) {
+  const { status } = useAuth()
+  if (status === 'restoring') return <div className="loading" role="status">Carregando sua sessão…</div>
+  if (authenticated && status !== 'authenticated') return <Navigate to="/login" replace />
+  if (!authenticated && status === 'authenticated') return <Navigate to="/app" replace />
+  return <Outlet />
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <div className="site-shell">
+          <header className="brand-bar"><img src="/sgf-mark.png" width="36" height="36" alt="" /><span>SGF</span><span className="brand-description">Sistema de Gestão Facilitada</span></header>
+          <main>
+            <Routes>
+              <Route element={<Gate authenticated={false} />}>
+                <Route path="/login" element={<AuthForm key="login" mode="login" />} />
+                <Route path="/register" element={<AuthForm key="register" mode="register" />} />
+              </Route>
+              <Route element={<Gate authenticated />}>
+                <Route path="/app" element={<SessionPage />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/app" replace />} />
+            </Routes>
+          </main>
+          <footer>SGF · Sistema de Gestão Facilitada</footer>
+        </div>
+      </AuthProvider>
+    </BrowserRouter>
+  )
+}

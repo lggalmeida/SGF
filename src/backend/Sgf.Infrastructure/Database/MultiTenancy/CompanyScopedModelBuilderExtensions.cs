@@ -18,6 +18,10 @@ public static class CompanyScopedModelBuilderExtensions
 
         foreach (var entityType in companyScopedEntityTypes)
         {
+            // Include the tenant in UPDATE/DELETE predicates, including detached entities.
+            modelBuilder.Entity(entityType.ClrType)
+                .Property<Guid>(nameof(ICompanyScopedEntity.CompanyId)).IsConcurrencyToken();
+
             var parameter = Expression.Parameter(entityType.ClrType, "entity");
             var companyIdProperty = Expression.Call(
                 typeof(EF),

@@ -36,6 +36,26 @@ Os testes do mecanismo usam uma entidade e um DbContext exclusivos do projeto de
 
 ## Consequencias
 
+### Hardening F.1: escrita de entidades anexadas
+
+CompanyId tambem e concurrency token no mapeamento de entidades ICompanyScopedEntity.
+Assim, SaveChanges/SaveChangesAsync geram UPDATE e DELETE com predicado
+`WHERE Id = @id AND CompanyId = @originalCompanyId`. As validacoes do ChangeTracker
+exigem que o valor original e o atual sejam iguais ao tenant autenticado.
+Um objeto anexado pode mentir sobre seu valor original; o predicado no PostgreSQL
+impede que essa mentira altere um registro de outra empresa. Zero linhas afetadas
+gera DbUpdateConcurrencyException, sem nova tentativa retirando o tenant.
+
+Os testes constroem entidades manualmente, sem SELECT previo, e cobrem Attach,
+Update e Remove, acesso legitimo, acesso cross-tenant e SQL efetivamente executado.
+Isso nao cria coluna nova: CompanyId ja pertence ao contrato. Company, Membership
+e Identity continuam fora desse mecanismo.
+
+Essa protecao vale para escrita rastreada via SaveChanges. SQL bruto e operacoes
+em lote ExecuteUpdate/ExecuteDelete nao passam pelo ChangeTracker nem aplicam
+automaticamente tokens de concorrencia; exigem revisao explicita do predicado
+de tenant quando futuramente necessarias. Nenhuma foi adicionada nesta fase.
+
 - Consultas simples em entidades tenant-scoped ja nascem protegidas por `CompanyId`.
 - Consultas por ID tambem respeitam o tenant atual, reduzindo risco de IDOR.
 - O desenvolvedor ainda precisa garantir que casos de uso tenant-scoped resolvam o `ICurrentTenantContext` antes de operar no `DbContext`.

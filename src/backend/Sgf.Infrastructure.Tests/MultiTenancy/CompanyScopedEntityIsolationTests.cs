@@ -4,8 +4,100 @@ using Sgf.Infrastructure.Database.MultiTenancy;
 
 namespace Sgf.Infrastructure.Tests.MultiTenancy;
 
-public sealed class CompanyScopedEntityIsolationTests
+public sealed class CompanyScopedEntityIsolationTests : IAsyncLifetime
 {
+    private readonly List<string> _databases = [];
+
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync()
+    {
+        var failures = new List<Exception>();
+        foreach (var databaseName in _databases)
+        {
+            try
+            {
+                await using var db = CreateDbContext(databaseName);
+                await db.Database.EnsureDeletedAsync();
+            }
+            catch (Exception exception)
+            {
+                failures.Add(exception);
+            }
+        }
+        // xUnit reports cleanup errors alongside the original test failure.
+        if (failures.Count > 0) throw new AggregateException("Test database cleanup failed.", failures);
+    }
+
+    [Theory]
+    [InlineData("attach-modified", false, false)]
+    [InlineData("update", false, false)]
+    [InlineData("attach-remove", false, false)]
+    [InlineData("remove", false, false)]
+    [InlineData("attach-modified", true, false)]
+    [InlineData("update", true, false)]
+    [InlineData("attach-remove", true, false)]
+    [InlineData("remove", true, false)]
+    [InlineData("attach-modified", false, true)]
+    [InlineData("update", false, true)]
+    [InlineData("attach-remove", false, true)]
+    [InlineData("remove", false, true)]
+    [InlineData("attach-modified", true, true)]
+    [InlineData("update", true, true)]
+    [InlineData("attach-remove", true, true)]
+    [InlineData("remove", true, true)]
+    public async Task DetachedWrites_CheckPersistedCompany(string pattern, bool ownsRecord, bool synchronous)
+    {
+        var databaseName = CreateDatabaseName();
+        var companyA = Guid.NewGuid();
+        var companyB = Guid.NewGuid();
+        await CreateDatabaseAsync(databaseName);
+        var seeded = await SeedAsync(databaseName, companyA, companyB);
+        var targetId = ownsRecord ? seeded.CompanyARecordId : seeded.CompanyBRecordId;
+        var sql = new List<string>();
+        await using var db = CreateDbContext(databaseName, companyA, sql);
+
+        // Deliberately forge CompanyId=A without loading the target from the database.
+        var detached = new TestCompanyScopedRecord(companyA, "Changed", targetId);
+        switch (pattern)
+        {
+            case "attach-modified": db.Attach(detached).State = EntityState.Modified; break;
+            case "update": db.Update(detached); break;
+            case "attach-remove": db.Attach(detached); db.Remove(detached); break;
+            case "remove": db.Remove(detached); break;
+        }
+        Assert.Empty(sql);
+        if (ownsRecord)
+        {
+            if (synchronous) db.SaveChanges();
+            else await db.SaveChangesAsync();
+        }
+        else if (synchronous)
+        {
+            Assert.Throws<DbUpdateConcurrencyException>(() => db.SaveChanges());
+        }
+        else
+        {
+            await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => db.SaveChangesAsync());
+        }
+
+        var delete = pattern.Contains("remove");
+        var command = Assert.Single(sql, line => line.Contains(delete ? "DELETE FROM" : "UPDATE "));
+        var predicate = command[command.IndexOf("WHERE", StringComparison.Ordinal)..];
+        Assert.Contains("\"CompanyId\" =", predicate);
+        Assert.Contains("\"Id\" =", predicate);
+
+        await using var verification = CreateDbContext(databaseName, ownsRecord ? companyA : companyB);
+        var persisted = await verification.Records.SingleOrDefaultAsync(r => r.Id == targetId);
+        if (ownsRecord && delete) Assert.Null(persisted);
+        else
+        {
+            Assert.NotNull(persisted);
+            Assert.Equal(ownsRecord ? companyA : companyB, persisted.CompanyId);
+            Assert.Equal(ownsRecord ? "Changed" : "Record B", persisted.Name);
+        }
+    }
+
     [Fact]
     public async Task Queries_ReturnOnlyRecordsFromCurrentCompany()
     {
@@ -202,13 +294,13 @@ public sealed class CompanyScopedEntityIsolationTests
         return new SeededRecords(companyARecord.Id, companyBRecord.Id);
     }
 
-    private static MultiTenantTestDbContext CreateDbContext(string databaseName, Guid? companyId = null)
+    private static MultiTenantTestDbContext CreateDbContext(string databaseName, Guid? companyId = null, List<string>? sql = null)
     {
-        var options = new DbContextOptionsBuilder<MultiTenantTestDbContext>()
-            .UseNpgsql($"Host=127.0.0.1;Port=15432;Database={databaseName};Username=sgf_user;Password=sgf_dev_password")
-            .Options;
+        var builder = new DbContextOptionsBuilder<MultiTenantTestDbContext>()
+            .UseNpgsql($"Host=127.0.0.1;Port=15432;Database={databaseName};Username=sgf_user;Password=sgf_dev_password");
+        if (sql is not null) builder.LogTo(sql.Add, [DbLoggerCategory.Database.Command.Name], Microsoft.Extensions.Logging.LogLevel.Information);
 
-        var dbContext = new MultiTenantTestDbContext(options);
+        var dbContext = new MultiTenantTestDbContext(builder.Options);
 
         if (companyId.HasValue)
         {
@@ -218,9 +310,11 @@ public sealed class CompanyScopedEntityIsolationTests
         return dbContext;
     }
 
-    private static string CreateDatabaseName()
+    private string CreateDatabaseName()
     {
-        return $"sgf_multitenancy_tests_{Guid.NewGuid():N}";
+        var name = $"sgf_multitenancy_tests_{Guid.NewGuid():N}";
+        _databases.Add(name);
+        return name;
     }
 
     private sealed record SeededRecords(Guid CompanyARecordId, Guid CompanyBRecordId);
@@ -272,9 +366,9 @@ public sealed class CompanyScopedEntityIsolationTests
         {
         }
 
-        public TestCompanyScopedRecord(Guid companyId, string name)
+        public TestCompanyScopedRecord(Guid companyId, string name, Guid? id = null)
         {
-            Id = Guid.NewGuid();
+            Id = id ?? Guid.NewGuid();
             CompanyId = companyId;
             Name = name;
         }
