@@ -44,7 +44,25 @@ RN15 - Produto pode possuir estoque mínimo para geração de alertas.
 
 RN16 - Produto pode possuir custo e preço de venda.
 
-## Fornecedores
+### Núcleo Implementado na Fase I
+
+- Nome obrigatório, até 200 caracteres; espaços nas extremidades são removidos.
+- SKU obrigatório, até 64 caracteres, normalizado sem espaços e em maiúsculas.
+- SKU é único por empresa, inclusive entre produtos inativos; empresas distintas
+  podem utilizar o mesmo SKU.
+- Descrição opcional, até 2.000 caracteres.
+- Custo e venda obrigatórios, não negativos, até 9.999.999.999,99, com no máximo
+  duas casas decimais. Venda abaixo do custo é permitida.
+- Empresa e datas são definidas exclusivamente pelo backend; empresa e data de
+  criação não podem ser alteradas pelo cliente.
+- Produto inicia ativo; desativação e reativação preservam o registro e o SKU.
+  Não há exclusão física nesta fase.
+- Member, Admin e Owner com vínculo ativo podem gerenciar produtos.
+- Estoque mínimo é configurável na Fase J; categorias e unidades permanecem futuras.
+
+Contratos e detalhes: [Produtos](10-produtos.md).
+
+## Fornecedores (trabalho futuro)
 
 RN17 - Todo fornecedor deve pertencer a uma empresa.
 
@@ -60,7 +78,7 @@ RN21 - Entrada de estoque aumenta o saldo do produto.
 
 RN22 - Saída de estoque diminui o saldo do produto.
 
-RN23 - Ajuste de estoque pode aumentar ou diminuir o saldo do produto.
+RN23 - Ajustes sofisticados ficam para evolução futura; nesta fase existem apenas Entry e Exit.
 
 RN24 - O saldo de estoque não deve ser alterado diretamente sem histórico.
 
@@ -68,7 +86,21 @@ RN25 - O sistema não deve permitir estoque negativo no MVP.
 
 RN26 - Movimentações de estoque devem registrar data, produto, quantidade, tipo e usuário responsável.
 
-RN27 - Produtos com saldo abaixo do estoque mínimo devem gerar alerta ou aparecer no dashboard.
+RN27 - Produto ativo com CurrentStock <= MinimumStock aparece como estoque baixo em Estoque e, desde a Fase L, no dashboard, sem tabela de alertas.
+
+### Estoque Implementado na Fase J
+
+- Saldo e mínimo começam em zero, aceitam até três casas decimais e nunca são negativos.
+- Quantidade de movimentação deve ser positiva; observação opcional tem até 1.000 caracteres.
+- Produto inativo ou de outro tenant não pode ser movimentado.
+- Empresa e usuário vêm do contexto autenticado; o cliente fornece somente produto, quantidade e observação.
+- Saldo e histórico são gravados atomicamente. Uma falha reverte ambos.
+- Saída sem saldo e escrita concorrente conflitante retornam 409 sem criar movimento.
+- CurrentStock, IsActive e CompanyId participam do controle de concorrência da escrita do produto.
+- Histórico não pode ser editado ou excluído pela API; SaveChanges também rejeita essas operações.
+- Edição comum de produto altera mínimo, nunca saldo. Member, Admin e Owner com contexto válido podem movimentar.
+
+Contratos, concorrência e limitações: [Estoque](11-estoque.md).
 
 ## Financeiro
 
@@ -76,9 +108,9 @@ RN28 - Toda receita deve pertencer a uma empresa.
 
 RN29 - Toda despesa deve pertencer a uma empresa.
 
-RN30 - Conta a pagar pode estar pendente, paga, vencida ou cancelada.
+RN30 - Na Fase K, conta a pagar é FinancialEntry Expense, com status Pending ou Paid.
 
-RN31 - Conta a receber pode estar pendente, recebida, vencida ou cancelada.
+RN31 - Na Fase K, conta a receber é FinancialEntry Income, com status Pending ou Paid.
 
 RN32 - Uma conta paga não deve ser paga novamente.
 
@@ -89,6 +121,29 @@ RN34 - Pagamentos e recebimentos devem registrar data e valor.
 RN35 - O fluxo de caixa deve considerar entradas e saídas financeiras.
 
 RN36 - Contas vencidas devem aparecer em indicadores ou alertas.
+
+### Financeiro Implementado na Fase K
+
+- Descrição obrigatória até 200 caracteres, categoria opcional até 100 e observação
+  opcional até 2.000; espaços externos removidos.
+- Valor estritamente positivo, até 999.999.999.999,99, com no máximo duas casas decimais.
+- Vencimento obrigatório como data sem horário. Não se presume que vencimento é pagamento.
+- Novo lançamento é Pending, sem PaidAt. CompanyId, status e datas de auditoria
+  não são definidos pelo cliente.
+- Pagamento/recebimento integral muda para Paid e registra PaidAt UTC no servidor.
+  Repetição preserva o mesmo registro e instante. Não há pagamento parcial.
+- Apenas pendentes podem ser editados; Type não muda depois do cadastro.
+  Não há reversão ou exclusão de lançamentos nesta fase.
+- Versão interna e CompanyId protegem atualização concorrente e propriedade do registro.
+- Saldo realizado = receitas Paid menos despesas Paid. Pendentes compõem apenas
+  totais a receber/a pagar. O saldo pode ser negativo e não representa saldo bancário.
+- Summary considera todo o histórico da empresa; filtros da tabela não alteram
+  os totais gerais. Uma consulta SQL calcula os totais sobre o mesmo snapshot.
+- Member, Admin e Owner com contexto válido podem gerenciar o financeiro.
+- Estoque não gera lançamentos financeiros. A Fase L passou a derivar alertas e
+  indicadores desses dados sem criar acoplamento entre os módulos.
+
+Contratos, índices e limites: [Financeiro](12-financeiro.md).
 
 ## Dashboard
 
@@ -104,7 +159,7 @@ Indicadores iniciais:
 - produtos abaixo do estoque mínimo;
 - total de receitas no período;
 - total de despesas no período;
-- saldo previsto;
+- saldo realizado no período;
 - contas a pagar vencidas;
 - contas a receber vencidas.
 
@@ -115,6 +170,17 @@ RN40 - Insights devem ser explicáveis ao usuário.
 RN41 - Insights iniciais devem ser baseados em regras simples.
 
 RN42 - O sistema não deve depender de inteligência artificial generativa para gerar os primeiros insights.
+
+### Dashboard e Analytics Implementados na Fase L
+
+- Realizados usam PaidAt; movimentos usam CreatedAt. Datas analíticas em UTC-03:00.
+- Pendentes, vencidos e estoque são estado atual; não são reconstruídos pelo período.
+- Comparação com intervalo anterior contíguo de igual duração; base zero não gera percentual.
+- Estoque parado exige produto ativo criado há pelo menos 30 dias e ausência de movimento nessa janela.
+- Insights são regras determinísticas com critério explícito, sem IA nem decisões automáticas.
+- Saída física não representa necessariamente venda; valor de estoque é estimativa a custo.
+- Todas as agregações são isoladas pela empresa autenticada. Fórmulas, prioridades,
+  limites e interpretação acadêmica: [Dashboard e Analytics](13-dashboard-analytics.md).
 
 Exemplos de regras de insight:
 

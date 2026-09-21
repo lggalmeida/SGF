@@ -1,213 +1,117 @@
 # SGF - Sistema de Gestão Facilitada
 
-Este repositório contém o projeto **SGF - Sistema de Gestão Facilitada**, desenvolvido como Trabalho de Conclusão de Curso em Sistemas de Informação.
+O SGF é um protótipo funcional robusto desenvolvido como Trabalho de Conclusão
+de Curso em Sistemas de Informação. O tema é:
 
-O tema acadêmico do projeto é:
+> Desenvolvimento de uma plataforma SaaS para gestão integrada de estoque e
+> finanças com análise de dados aplicada à tomada de decisão em pequenas empresas.
 
-**Desenvolvimento de uma plataforma SaaS para gestão integrada de estoque e finanças com análise de dados aplicada à tomada de decisão em pequenas empresas.**
+O sistema centraliza produtos, estoque e finanças e transforma esses registros
+em indicadores e insights determinísticos. Ele apoia a decisão humana; não toma
+decisões automaticamente e não utiliza inteligência artificial.
 
-O objetivo é desenvolver uma solução acadêmica robusta, organizada e próxima de um produto real, priorizando simplicidade, boas práticas e clareza arquitetural.
+## Módulos Entregues
 
-## Objetivo do Produto
+- identidade com ASP.NET Core Identity, access token JWT, refresh e logout;
+- empresas, Memberships e papéis Owner, Admin e Member;
+- isolamento multi-tenant por CompanyId;
+- produtos com SKU único por empresa e inativação;
+- estoque com saldo, mínimo, entradas, saídas e histórico imutável;
+- financeiro com receitas, despesas, pendências e pagamentos;
+- dashboard e analytics com períodos, comparações e insights explicáveis;
+- frontend responsivo com temas claro e escuro.
 
-O SGF tem como finalidade apoiar pequenas empresas na gestão integrada de:
+Fornecedores, compras, vendas, notas fiscais, integrações bancárias e previsões
+não integram a entrega atual. Veja [dívida técnica e trabalhos futuros](docs/14-divida-tecnica-e-trabalhos-futuros.md).
 
-- produtos;
-- estoque;
-- fornecedores;
-- movimentações de entrada e saída;
-- receitas;
-- despesas;
-- contas a pagar;
-- contas a receber;
-- fluxo de caixa;
-- indicadores gerenciais;
-- insights para tomada de decisão.
+## Stack
 
-O sistema será desenvolvido como uma aplicação SaaS multi-tenant, permitindo que múltiplas empresas utilizem a mesma plataforma com isolamento lógico de dados.
+| Área | Tecnologias |
+| --- | --- |
+| Backend | C#, .NET 10 LTS, ASP.NET Core Minimal APIs |
+| Persistência | Entity Framework Core 10, Npgsql, PostgreSQL 17 |
+| Frontend | React, TypeScript, Vite, TanStack Query, React Router, Recharts |
+| Testes | xUnit, WebApplicationFactory, PostgreSQL real e Playwright |
+| Ambiente local | Docker Compose |
 
-## Escopo Inicial do MVP
-
-O MVP definido para o projeto inclui:
-
-- cadastro e autenticação de usuários;
-- cadastro de empresas;
-- vínculo entre usuários e empresas;
-- controle multi-tenant por empresa;
-- cadastro de produtos;
-- cadastro de fornecedores;
-- movimentações de entrada e saída de estoque;
-- controle básico de saldo de estoque;
-- cadastro de receitas e despesas;
-- contas a pagar e contas a receber;
-- fluxo de caixa simples;
-- dashboard com indicadores básicos;
-- geração inicial de insights baseados em regras.
-
-Funcionalidades avançadas, integrações externas, inteligência artificial generativa, microsserviços e infraestrutura complexa não fazem parte do escopo inicial.
-
-## Stack Planejada
-
-### Backend
-
-- C#
-- ASP.NET Core Web API
-- Entity Framework Core
-
-### Banco de Dados
-
-- PostgreSQL
-
-### Frontend
-
-- React
-- TypeScript
-- TanStack Query
-
-## Arquitetura
-
-A arquitetura escolhida é um **monólito modular**.
-
-Isso significa que o sistema será entregue como uma única aplicação backend, mas organizado internamente por módulos de negócio. Essa abordagem reduz a complexidade operacional e facilita o aprendizado, sem abrir mão de organização e separação de responsabilidades.
-
-Os módulos previstos inicialmente são:
-
-- Identidade e Acesso;
-- Empresas e Multi-Tenancy;
-- Produtos;
-- Fornecedores;
-- Estoque;
-- Financeiro;
-- Dashboard;
-- Insights;
-- Auditoria básica.
-
-## Multi-Tenancy
-
-A estratégia inicial será de **banco de dados compartilhado com isolamento por `CompanyId`**.
-
-Cada entidade de negócio deverá possuir uma referência à empresa proprietária dos dados. Assim, as consultas, comandos e regras de autorização deverão sempre considerar a empresa atual do usuário autenticado.
-
-Essa decisão foi tomada por equilibrar simplicidade, clareza de implementação e aderência ao contexto de um projeto acadêmico com características reais de SaaS.
-
-## Documentação
-
-A documentação inicial do projeto está disponível na pasta `/docs`:
-
-- `01-visao-do-produto.md`
-- `02-requisitos.md`
-- `03-arquitetura.md`
-- `04-modelo-de-dominio.md`
-- `05-regras-de-negocio.md`
-- `06-roadmap.md`
-
-O arquivo `AGENTS.md` contém orientações para futuros agentes e colaboradores seguirem as decisões arquiteturais do projeto.
-
-## Estado Atual
-
-A fundacao e as fases A-F de identidade estao implementadas, com hardening F.1:
-
-- cadastro de usuario, empresa e Membership Owner em transacao;
-- login JWT, refresh token com rotacao e logout;
-- contexto de tenant revalidado e policies OwnerOnly/AdminOrOwner;
-- protecao reutilizavel de leitura e escrita multi-tenant;
-- PostgreSQL local via Docker e migrations do EF Core;
-- frontend React/TypeScript com login, cadastro e pagina de sessao protegida (fase G);
-- testes em Sgf.Api.Tests, Sgf.Application.Tests e Sgf.Infrastructure.Tests.
-
-Produtos, estoque, financeiro e analytics ainda nao foram implementados.
-Decisoes de autenticacao: [ADR 006](docs/adr/006-refresh-token-and-authorization.md).
-
-## Execucao Local
-
-Siga a sequencia abaixo em PowerShell 7, a partir da raiz do clone SGF.
-Use o mesmo terminal para os passos 2 a 7, pois as variaveis pertencem ao processo.
-
-### 1. Pre-requisitos
+## Pré-requisitos
 
 - Git;
-- .NET SDK 10.0.400 ou compativel com `global.json`;
-- Node.js 22.12+ (ou 24) e npm;
-- Docker Desktop iniciado, com containers Linux;
+- .NET SDK compatível com o [global.json](global.json);
+- Node.js 22.12 ou superior e npm;
+- Docker Desktop com containers Linux;
 - PowerShell 7.
 
-A pasta `.dotnet/` desta maquina nao e versionada. Em um clone novo, instale o SDK.
-Se ja utiliza o SDK local, substitua `dotnet` por `./.dotnet/dotnet.exe` nos comandos
-executados na raiz. Confira com `dotnet --version`, `node --version` e `docker version`.
+Na raiz, confirme com:
 
-### 2. Configurar o ambiente
+```powershell
+dotnet --version
+node --version
+docker version
+```
+
+Esta máquina também pode usar `./.dotnet/dotnet.exe` no lugar de `dotnet`.
+
+## Configuração e Execução
+
+Execute esta sequência a partir da raiz do repositório. Mantenha as variáveis
+do backend no mesmo terminal em que a API será iniciada.
+
+### 1. Configurar ambiente e JWT
 
 ```powershell
 if (!(Test-Path .env)) { Copy-Item .env.example .env }
 $env:ASPNETCORE_ENVIRONMENT = 'Development'
+$env:Jwt__SigningKey = [Convert]::ToBase64String(
+  [System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64)
+)
 ```
 
-O Compose usa `.env`; ASP.NET Core nao carrega esse arquivo automaticamente.
-Os valores padrao de PostgreSQL sao exclusivos de desenvolvimento e combinam com
-`appsettings.Development.json`: host 127.0.0.1, porta 15432, banco sgf_dev,
-usuario sgf_user. Se alterar porta/credenciais, ajuste tambem
-`ConnectionStrings__DefaultConnection` no ambiente. Os testes atualmente usam os
-valores locais padrao e criam seus proprios bancos; nao aponte testes para producao.
+`.env` não é versionado. O ASP.NET Core não carrega esse arquivo; ele é usado
+pelo Docker Compose. A chave JWT deve possuir pelo menos 32 bytes, não deve ser
+exibida ou versionada e precisa ser reutilizada entre reinícios se for necessário
+preservar tokens já emitidos.
 
-### 3. Configurar a chave JWT antes de migrations ou API
-
-```powershell
-$env:Jwt__SigningKey = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
-```
-
-Nao exiba nem versione a chave. Esse comando fornece uma chave somente para o
-terminal e seus processos. Para manter JWTs entre reinicios, reutilize uma chave
-armazenada em local seguro. Gerar outra chave invalida access tokens anteriores.
-O placeholder de `.env.example` nao e uma chave para uso real.
-
-Todos os ambientes, inclusive Testing, exigem chave explicita de pelo menos
-32 bytes. As factories de teste fornecem uma chave exclusiva de testes, sem
-alterar variaveis globais e sem fallback aleatorio.
-
-### 4. Iniciar PostgreSQL
+### 2. Iniciar PostgreSQL
 
 ```powershell
 docker compose up -d --wait
 docker compose ps
 ```
 
-A publicacao deve mostrar `127.0.0.1:15432->5432/tcp`.
-O volume preserva dados entre reinicios; nao use `docker compose down -v` para
-apenas reiniciar o sistema.
+O banco local fica restrito a `127.0.0.1:15432`. Os valores padrão de
+desenvolvimento estão em `.env.example` e combinam com
+`appsettings.Development.json`; não são credenciais de produção.
 
-### 5. Restaurar projetos e ferramenta EF
+### 3. Restaurar backend e ferramenta EF
 
 ```powershell
 dotnet restore src/backend/Sgf.sln
 dotnet tool restore
 ```
 
-A versao da ferramenta `dotnet-ef` e definida no manifesto `dotnet-tools.json`
-na raiz. Nenhuma instalacao global da ferramenta e necessaria.
-
-### 6. Aplicar migrations
+### 4. Aplicar migrations
 
 ```powershell
 dotnet ef database update --project src/backend/Sgf.Infrastructure --startup-project src/backend/Sgf.Api
 ```
 
-O comando cria as tabelas de identidade, Companies, Memberships e RefreshTokens.
-A F.1 nao acrescenta schema ou migration.
+As migrations criam Identity, Companies, Memberships, RefreshTokens, Products,
+InventoryMovements e FinancialEntries.
 
-### 7. Executar API
+### 5. Iniciar a API
 
 ```powershell
 dotnet run --project src/backend/Sgf.Api --launch-profile http
 ```
 
-API: http://localhost:5206. Validacao: `GET /api/health` e
-`GET /api/health/database`. Autenticacao: `POST /api/auth/register`,
-`POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`
-e `GET /api/auth/me`.
+- API: [http://localhost:5206](http://localhost:5206)
+- Health: [http://localhost:5206/api/health](http://localhost:5206/api/health)
+- Banco: [http://localhost:5206/api/health/database](http://localhost:5206/api/health/database)
 
-### 8. Executar frontend atual
+### 6. Iniciar o frontend
 
-Em outro terminal, a partir da raiz:
+Em outro terminal:
 
 ```powershell
 cd src/frontend
@@ -215,43 +119,145 @@ npm ci
 npm run dev -- --host localhost --port 5173 --strictPort
 ```
 
-Abra http://localhost:5173/login. Cadastro em /register e sessao protegida em /app.
-A URL padrao do backend e http://localhost:5206; `VITE_API_BASE_URL` permite
-configura-la. Use localhost nos dois enderecos para preservar comportamento
-same-site dos cookies. O exemplo de configuracao esta em src/frontend/.env.example.
-Detalhes da sessao e testes: [Frontend de autenticacao](docs/08-frontend-autenticacao.md).
+Acesse [http://localhost:5173/login](http://localhost:5173/login). O exemplo
+`src/frontend/.env.example` permite configurar `VITE_API_BASE_URL`. Use
+`localhost` tanto no frontend quanto no backend para manter o comportamento
+same-site do cookie HttpOnly.
 
-### 9. Executar builds e testes
+## Dados de Demonstração
 
-Com PostgreSQL ativo, em outro terminal na raiz (pare a API antes de recompilar
-caso o Windows informe arquivos em uso):
+Com API, frontend e PostgreSQL locais ativos, execute:
+
+```powershell
+./scripts/seed-demo.ps1
+```
+
+O script pede uma senha para `demo@sgf.local`; ela não é gravada nem exibida.
+Como alternativa temporária:
+
+```powershell
+$env:SGF_DEMO_PASSWORD = 'Defina-Uma-Senha-Local1!'
+./scripts/seed-demo.ps1
+Remove-Item Env:SGF_DEMO_PASSWORD
+```
+
+A carga é manual, aceita apenas API HTTP em localhost e deve ser usada em banco
+local limpo. Ela cria a empresa **Mercado Exemplo LTDA**, 11 produtos, saldos
+variados, histórico, lançamentos pagos, pendentes e vencidos. Também ajusta,
+diretamente no PostgreSQL local, somente as datas dos registros que acabou de
+criar para formar períodos comparáveis e um produto parado. Não existe seed
+automático em produção.
+
+Para recriar exclusivamente o ambiente local do zero, sabendo que todos os dados
+locais serão removidos:
+
+```powershell
+docker compose down -v
+docker compose up -d --wait
+dotnet ef database update --project src/backend/Sgf.Infrastructure --startup-project src/backend/Sgf.Api
+```
+
+O cenário e a ordem sugerida de apresentação estão em
+[roteiro de demonstração](docs/15-roteiro-demonstracao.md).
+
+## Capturas Finais
+
+As evidências visuais geradas com o cenário demo estão em
+[`docs/screenshots`](docs/screenshots):
+
+- login em tema claro;
+- dashboard em light/dark e desktop/mobile;
+- Produtos, Estoque, Financeiro e Analytics;
+- Configurações e navegação mobile.
+
+As imagens são material acadêmico; credenciais, tokens e dados sensíveis não
+aparecem nelas.
+
+## Testes
+
+Com PostgreSQL ativo:
 
 ```powershell
 dotnet build src/backend/Sgf.sln
 dotnet test src/backend/Sgf.sln --no-build
+npm --prefix src/frontend run typecheck
 npm --prefix src/frontend run build
+npm --prefix src/frontend test
 ```
 
-A solucao inclui `Sgf.Api.Tests`, `Sgf.Application.Tests` e
-`Sgf.Infrastructure.Tests`. Integracao usa PostgreSQL real e migrations em bancos
-temporarios. Os testes de isolamento usam entidade exclusiva de testes, verificam
-SQL de UPDATE/DELETE e removem os bancos criados ao terminar, inclusive em falhas.
-
-Testes de navegador da fase G (API e PostgreSQL devem estar ativos):
+Os testes backend incluem `Sgf.Application.Tests`, `Sgf.Infrastructure.Tests`
+e `Sgf.Api.Tests`. Os testes de integração aplicam migrations em bancos
+temporários e validam isolamento entre tenants. O Playwright requer API e
+PostgreSQL ativos; ele inicia o Vite quando necessário. Para usar o Edge local:
 
 ```powershell
-cd src/frontend
-npx playwright install chromium
-npm test
-npm run typecheck
+$env:PLAYWRIGHT_CHANNEL = 'msedge'
+npm --prefix src/frontend test
 ```
 
-O Playwright inicia o Vite quando necessario. Alternativa no Windows com Edge
-instalado: defina `$env:PLAYWRIGHT_CHANNEL = 'msedge'` e dispense o download de Chromium.
-Os testes criam contas identificadas por `frontend-...@example.com` no banco local.
+## Estrutura
 
-## Pendencia Antes de Publicacao Publica
+```text
+src/backend/
+  Sgf.Domain/          entidades e regras centrais
+  Sgf.Application/     contratos e casos de uso
+  Sgf.Infrastructure/  EF Core, Identity e implementações
+  Sgf.Api/             HTTP, autenticação e composição
+  *.Tests/             testes unitários e de integração
+src/frontend/
+  src/app/             layout, rotas e providers
+  src/features/        auth, produtos, estoque, financeiro e analytics
+  src/components/      componentes compartilhados com uso real
+  tests/               fluxos Playwright
+docs/                  decisões, domínio e material acadêmico
+scripts/               ferramentas locais controladas
+```
 
-Rate limiting de login permanece como divida tecnica registrada pela auditoria.
-Nao foi implementado na F.1. Iniciar o frontend nao significa autorizar publicacao
-publica sem essa protecao e sem configuracao de HTTPS e segredos de producao.
+O backend é um monólito modular: uma unidade de implantação com limites de
+responsabilidade internos. Não há microsserviços, CQRS, MediatR, Redis ou
+repository genérico.
+
+## Segurança
+
+- senhas são tratadas exclusivamente pelo ASP.NET Core Identity;
+- access tokens JWT são curtos e refresh tokens opacos ficam em cookie HttpOnly;
+- refresh tokens são armazenados somente por hash e rotacionados;
+- Membership e Company são revalidados a cada contexto de tenant;
+- Global Query Filters isolam leituras por CompanyId;
+- proteção de escrita e tokens de concorrência impedem escrita cross-tenant;
+- CORS aceita apenas origens configuradas;
+- rotas de negócio exigem autenticação.
+
+Essas práticas aproximam o protótipo de uma publicação, mas não substituem o
+hardening operacional descrito na documentação de dívida técnica.
+
+## Limitações
+
+- uma sessão suporta uma única empresa; switch-company não foi implementado;
+- não há confirmação de e-mail, recuperação de senha, MFA ou lockout;
+- não há rate limiting, observabilidade, política de backup ou deploy de produção;
+- refresh tokens não possuem famílias de sessão nem detecção avançada de reuso;
+- financeiro não possui pagamento parcial, reversão, contas bancárias ou integração;
+- estoque não possui depósitos, lotes, reservas, custo médio ou vínculo financeiro;
+- analytics usa regras determinísticas e dados atuais, sem previsão ou IA;
+- preferências de tema são locais ao navegador.
+
+O SGF deve ser apresentado como **aplicação acadêmica com práticas de produção**,
+não como serviço público pronto ou plataforma de escala enterprise.
+
+## Documentação
+
+- [Visão do produto](docs/01-visao-do-produto.md)
+- [Requisitos](docs/02-requisitos.md)
+- [Arquitetura](docs/03-arquitetura.md)
+- [Modelo de domínio](docs/04-modelo-de-dominio.md)
+- [Regras de negócio](docs/05-regras-de-negocio.md)
+- [Roadmap](docs/06-roadmap.md)
+- [Produtos](docs/10-produtos.md)
+- [Estoque](docs/11-estoque.md)
+- [Financeiro](docs/12-financeiro.md)
+- [Dashboard e Analytics](docs/13-dashboard-analytics.md)
+- [Dívida técnica e trabalhos futuros](docs/14-divida-tecnica-e-trabalhos-futuros.md)
+- [Roteiro de demonstração](docs/15-roteiro-demonstracao.md)
+- [Capturas finais](docs/screenshots)
+- [ADRs](docs/adr)

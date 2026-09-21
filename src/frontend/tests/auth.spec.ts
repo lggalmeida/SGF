@@ -13,7 +13,7 @@ async function createAndLogin(page: Page) {
   await page.getByLabel('Senha', { exact: true }).fill(user.password)
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(page).toHaveURL(/\/app$/)
-  await expect(page.getByRole('heading', { name: 'Olá, João Teste' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible()
   return user
 }
 
@@ -36,9 +36,11 @@ test('cadastro, login, F5, rotas publicas e logout', async ({ page }) => {
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(page).toHaveURL(/\/app$/)
   await expect(page.getByText(user.companyName, { exact: true })).toBeVisible()
+  await page.getByLabel('Menu do usuário').click()
   await expect(page.getByText('Owner', { exact: true })).toBeVisible()
+  await page.getByLabel('Menu do usuário').click()
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Olá, João Teste' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/app$/)
   for (const path of ['/login', '/register']) {
     await page.goto(path)
@@ -49,6 +51,7 @@ test('cadastro, login, F5, rotas publicas e logout', async ({ page }) => {
   expect(await page.evaluate(() => document.cookie)).not.toContain('sgf_refresh_token')
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).toBe('{}')
   await page.screenshot({ path: 'test-results/app-desktop.png', fullPage: true })
+  await page.getByLabel('Menu do usuário').click()
   await page.getByRole('button', { name: 'Sair', exact: true }).click()
   await expect(page).toHaveURL(/\/login$/)
   await page.goto('/app')
@@ -118,6 +121,7 @@ test('refresh falho limpa sessao e nao entra em loop', async ({ page }) => {
 test('logout com falha de rede limpa sessao e nao restaura no F5', async ({ page }) => {
   await createAndLogin(page)
   await page.route('**/api/auth/logout', route => route.abort())
+  await page.getByLabel('Menu do usuário').click()
   await page.getByRole('button', { name: 'Sair', exact: true }).click()
   await expect(page).toHaveURL(/\/login$/)
   await expect(page.getByRole('status')).toContainText('Não foi possível confirmar')

@@ -35,7 +35,7 @@ Não foi escolhido porque o projeto possui vários domínios de negócio: estoqu
 
 Foi escolhido por equilibrar simplicidade e organização.
 
-## Módulos Planejados
+## Módulos Implementados
 
 ### Identidade e Acesso
 
@@ -49,13 +49,9 @@ Responsável pelo cadastro de empresas, vínculo entre usuários e empresas e is
 
 Responsável pelo cadastro e manutenção dos produtos da empresa.
 
-### Fornecedores
-
-Responsável pelo cadastro de fornecedores.
-
 ### Estoque
 
-Responsável pelas movimentações de entrada, saída, ajuste e consulta de saldo.
+Responsável pelas movimentações de entrada, saída, histórico e consulta de saldo.
 
 ### Financeiro
 
@@ -69,9 +65,8 @@ Responsável pela apresentação de indicadores consolidados.
 
 Responsável por gerar alertas e recomendações simples baseadas em regras.
 
-### Auditoria Básica
-
-Responsável por registrar informações como data de criação, data de alteração e usuários envolvidos.
+Datas de criação/alteração fazem parte das entidades relevantes; movimentações
+de estoque preservam o usuário responsável. Não existe módulo separado de auditoria.
 
 ## Organização Conceitual do Backend
 
@@ -137,14 +132,8 @@ Exemplos:
 
 ### Shared
 
-Camada para elementos reutilizáveis e genéricos.
-
-Exemplos:
-
-- paginação;
-- tipos de resultado;
-- exceções;
-- constantes compartilhadas.
+Projeto reservado para compartilhamento realmente transversal. No estado atual,
+permanece mínimo; não deve se tornar depósito genérico de helpers ou abstrações.
 
 ## Organização Conceitual do Frontend
 
@@ -157,7 +146,6 @@ A estrutura esperada do frontend é:
     /features
     /components
     /lib
-    /types
 ```
 
 ### app
@@ -169,13 +157,11 @@ Configuração geral da aplicação, rotas e providers.
 Funcionalidades organizadas por domínio:
 
 - auth;
-- companies;
 - products;
-- suppliers;
-- stock;
+- inventory;
 - finance;
-- dashboard;
-- insights.
+- analytics;
+- settings.
 
 ### components
 
@@ -244,11 +230,15 @@ O backend não aceita `CompanyId` enviado livremente pelo frontend para definir 
 A resolução é feita sob demanda, para que endpoints públicos como health check, cadastro e login continuem funcionando sem contexto de tenant.
 ## Isolamento de Dados Tenant-Scoped
 
-Futuras entidades de negócio pertencentes a uma empresa deverão implementar `ICompanyScopedEntity` e possuir `CompanyId`.
+Entidades de negócio pertencentes a uma empresa implementam `ICompanyScopedEntity` e possuem `CompanyId`.
 
-Para leitura, o Entity Framework Core aplicará Global Query Filters em entidades tenant-scoped. Assim, uma consulta como `db.Products.ToListAsync()` deverá considerar automaticamente a empresa atual.
+Para leitura, o Entity Framework Core aplica Global Query Filters em entidades
+tenant-scoped. Uma consulta como `db.Products.ToListAsync()` considera
+automaticamente a empresa atual.
 
-Para escrita, o backend deverá definir o `CompanyId` na criação usando o contexto autenticado, e operações de alteração ou exclusão deverão validar que o registro pertence ao tenant atual.
+Para escrita, o backend define o `CompanyId` na criação usando o contexto
+autenticado. Alterações e exclusões incluem o CompanyId persistido no predicado
+de concorrência, protegendo inclusive entidades anexadas manualmente.
 
 A ausência de tenant válido deve falhar de forma segura: entidades tenant-scoped não devem retornar dados e não devem permitir escrita.
 

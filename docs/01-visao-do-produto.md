@@ -36,7 +36,6 @@ O sistema permitirá que pequenas empresas registrem suas operações principais
 O público-alvo inicial são pequenas empresas que precisam de uma solução simples e organizada para:
 
 - controlar produtos e estoque;
-- registrar fornecedores;
 - acompanhar receitas e despesas;
 - controlar contas a pagar e a receber;
 - visualizar indicadores;
@@ -53,16 +52,15 @@ Os objetivos principais são:
 - oferecer uma base SaaS multi-tenant;
 - manter a solução compreensível e evolutiva.
 
-## Escopo Inicial do MVP
+## Escopo Entregue no TCC
 
-O MVP incluirá:
+O protótipo funcional inclui:
 
 - cadastro e autenticação de usuários;
 - cadastro de empresas;
 - vínculo entre usuários e empresas;
 - arquitetura SaaS multi-tenant;
 - cadastro de produtos;
-- cadastro de fornecedores;
 - movimentações de entrada e saída de estoque;
 - controle básico de saldo;
 - receitas;
@@ -72,6 +70,11 @@ O MVP incluirá:
 - fluxo de caixa simples;
 - dashboard com indicadores;
 - insights baseados em regras.
+
+Fornecedores fizeram parte do planejamento inicial, mas foram retirados da
+entrega para preservar profundidade em estoque, financeiro, segurança e
+analytics. A decisão e os demais trabalhos futuros estão registrados em
+`14-divida-tecnica-e-trabalhos-futuros.md`.
 
 ## Fora do Escopo Inicial
 

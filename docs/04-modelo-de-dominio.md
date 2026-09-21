@@ -16,7 +16,6 @@ Relacionamentos:
 
 - possui usuários vinculados;
 - possui produtos;
-- possui fornecedores;
 - possui movimentações de estoque;
 - possui registros financeiros.
 
@@ -61,21 +60,24 @@ Id
 CompanyId
 Name
 Sku
-CategoryId
-UnitOfMeasureId
+Description
 CostPrice
 SalePrice
+CurrentStock
 MinimumStock
 IsActive
+CreatedAt
+UpdatedAt
 ```
 
 Relacionamentos:
 
 - pertence a uma empresa;
-- pertence a uma categoria;
-- possui movimentações de estoque.
+- implementa ICompanyScopedEntity;
+- na Fase J, possui saldo e mínimo numeric(14,3), inicialmente zero, e movimentações;
+- categorias e unidades permanecem futuras.
 
-### ProductCategory
+### ProductCategory (futuro)
 
 Representa a categoria de um produto.
 
@@ -86,7 +88,7 @@ Exemplos:
 - Material de escritório;
 - Serviços.
 
-### UnitOfMeasure
+### UnitOfMeasure (futuro)
 
 Representa a unidade de medida de um produto.
 
@@ -98,7 +100,7 @@ Exemplos:
 - quilo;
 - litro.
 
-### Supplier
+### Supplier (futuro)
 
 Representa um fornecedor da empresa.
 
@@ -120,7 +122,7 @@ Relacionamentos:
 - pode estar associado a movimentações de entrada;
 - pode estar associado a despesas ou contas a pagar.
 
-### StockMovement
+### InventoryMovement (Fase J)
 
 Representa uma movimentação de estoque.
 
@@ -132,102 +134,71 @@ Campos conceituais:
 Id
 CompanyId
 ProductId
-SupplierId
 Type
 Quantity
-UnitCost
-OccurredAt
-Reason
-CreatedByUserId
+Notes
+CreatedAt
+UserId
 ```
 
 Tipos iniciais:
 
-- entrada;
-- saída;
-- ajuste.
+- Entry (entrada);
+- Exit (saída).
 
 Relacionamentos:
 
 - pertence a uma empresa;
 - pertence a um produto;
-- pode estar associada a um fornecedor.
+- registra o usuário responsável, sem fornecedor ou custo nesta fase;
+- vínculo composto (CompanyId, ProductId) impede associação a produto de outra empresa;
+- histórico imutável pela API e por SaveChanges; não há edição ou exclusão comum.
 
-### StockBalance
+### Saldo Atual (Fase J)
 
 Representa o saldo atual de um produto em estoque.
 
-Pode ser implementado de duas formas:
+É armazenado em Product.CurrentStock, sem tabela StockBalance. Saldo e movimento
+são persistidos juntos em uma transação. CurrentStock é token de concorrência;
+MinimumStock pode ser editado, mas CurrentStock não é aceito pela edição de produto.
+Detalhes: [Estoque](11-estoque.md).
 
-- calculado a partir das movimentações;
-- armazenado em uma tabela própria e atualizado a cada movimentação.
+### FinancialEntry (Fase K)
 
-Decisão inicial recomendada: manter o saldo de forma controlada no sistema, sempre atualizado por movimentações, e nunca alterar saldo sem histórico.
+Representa receita, despesa, conta a receber ou conta a pagar em uma única entidade.
+Substitui os conceitos separados Revenue, Expense, AccountPayable, AccountReceivable
+e Payment do planejamento inicial, sem tabelas redundantes.
 
-### Revenue
-
-Representa uma receita da empresa.
-
-Campos conceituais:
-
-```text
-Id
-CompanyId
-Description
-Amount
-DueDate
-ReceivedAt
-Status
-```
-
-### Expense
-
-Representa uma despesa da empresa.
-
-Campos conceituais:
+Campos implementados:
 
 ```text
 Id
 CompanyId
+Type (Income / Expense)
 Description
+Category (opcional)
 Amount
 DueDate
 PaidAt
-Status
-SupplierId
+Status (Pending / Paid)
+Notes (opcional)
+CreatedAt
+UpdatedAt
+Version (controle interno de concorrência)
 ```
 
-### AccountPayable
-
-Representa uma obrigação financeira que a empresa precisa pagar.
-
-Status iniciais:
-
-- pendente;
-- paga;
-- vencida;
-- cancelada.
-
-### AccountReceivable
-
-Representa um valor que a empresa tem a receber.
-
-Status iniciais:
-
-- pendente;
-- recebida;
-- vencida;
-- cancelada.
-
-### Payment
-
-Representa o pagamento ou recebimento associado a uma conta.
-
-Esse conceito poderá ser refinado durante a implementação financeira.
+Implementa ICompanyScopedEntity e pertence a Company. Amount usa numeric(14,2),
+DueDate usa date, timestamps usam UTC. Pending + Income representa conta a receber;
+Pending + Expense representa conta a pagar. Não há fornecedor, vínculo com estoque,
+exclusão ou reversão nesta fase. Detalhes: [Financeiro](12-financeiro.md).
 
 ### Insight
 
 Representa um alerta ou recomendação gerada a partir de dados do sistema.
+
+Na Fase L é um resultado calculado, não uma entidade persistida. Code, Level,
+Message e Evidence são derivados dos indicadores do tenant atual. Não há tabela
+Insight nem necessidade de migration. Ver [Dashboard e Analytics](13-dashboard-analytics.md).
 
 Exemplos:
 
@@ -242,18 +213,13 @@ Modelo simplificado:
 
 ```text
 Company 1 -> N Product
-Company 1 -> N Supplier
-Company 1 -> N StockMovement
-Company 1 -> N Revenue
-Company 1 -> N Expense
-Company 1 -> N AccountPayable
-Company 1 -> N AccountReceivable
+Company 1 -> N InventoryMovement
+Company 1 -> N FinancialEntry
 
 User N -> N Company, por meio de Membership
 
-Product 1 -> N StockMovement
-Supplier 1 -> N StockMovement
-Supplier 1 -> N Expense
+Product 1 -> N InventoryMovement
+User 1 -> N InventoryMovement
 ```
 
 ## Regra Estrutural Mais Importante
@@ -265,13 +231,10 @@ Essa regra é essencial para garantir o isolamento entre empresas no modelo SaaS
 Exemplos de entidades com `CompanyId`:
 
 - Product;
-- Supplier;
-- StockMovement;
-- Revenue;
-- Expense;
-- AccountPayable;
-- AccountReceivable;
-- Insight.
+- InventoryMovement;
+- FinancialEntry.
+
+FinancialEntry também é fonte das agregações analíticas. Insights são resultados derivados e não entidades persistidas.
 
 Entidades globais ou técnicas, como `User`, podem não possuir `CompanyId`, pois um usuário pode estar vinculado a várias empresas.
 

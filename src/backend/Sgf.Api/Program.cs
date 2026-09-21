@@ -9,6 +9,10 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Sgf.Api.Authorization;
 using Sgf.Api.Identity;
+using Sgf.Api.Products;
+using Sgf.Api.Inventory;
+using Sgf.Api.Finance;
+using Sgf.Api.Analytics;
 using Sgf.Application.Identity;
 using Sgf.Domain.Companies;
 using Sgf.Infrastructure;
@@ -305,6 +309,11 @@ app.MapGet("/api/auth/me", async (
         ? Results.Forbid()
         : Results.Ok(currentUser);
 }).RequireAuthorization();
+
+app.MapProductEndpoints();
+app.MapInventoryEndpoints();
+app.MapFinanceEndpoints();
+app.MapDashboardEndpoints();
 
 app.Run();
 

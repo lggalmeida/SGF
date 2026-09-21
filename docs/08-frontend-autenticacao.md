@@ -1,5 +1,9 @@
 # Fase G - Frontend de autenticacao
 
+Este documento preserva o recorte histórico da Fase G. Sidebar, módulos de
+negócio e dashboard citados como ausentes foram entregues nas fases posteriores;
+o estado atual e os comandos vigentes estão no README.
+
 ## Estrutura
 
 - src/frontend/src/App.tsx: rotas /login, /register e /app; guards e layout.
@@ -80,7 +84,8 @@ competir pela rotacao do cookie e exigir novo login; coordenacao entre abas nao
 foi adicionada nesta fase. Nao ha garantia contra XSS apenas por usar memoria.
 Publicacao exige HTTPS, origens CORS corretas e fallback de rotas SPA para index.html.
 Rate limiting de login continua pendente no backend antes da publicacao publica.
-Sem sidebar, dashboard, switch-company ou novas funcionalidades de negocio.
+Na Fase G ainda não havia sidebar, dashboard ou módulos de negócio.
+Switch-company permanece futuro.
 
 ## Resultado desta entrega
 

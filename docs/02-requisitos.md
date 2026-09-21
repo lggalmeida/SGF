@@ -1,6 +1,7 @@
 # Requisitos
 
-Este documento descreve os requisitos iniciais do MVP do **SGF - Sistema de Gestão Facilitada**.
+Este documento descreve os requisitos do **SGF - Sistema de Gestão Facilitada**.
+Itens marcados como futuros não fazem parte da entrega do TCC.
 
 ## Requisitos Funcionais
 
@@ -34,11 +35,12 @@ RF11 - O sistema deve permitir a edição de produtos.
 
 RF12 - O sistema deve permitir a inativação de produtos.
 
-RF13 - O sistema deve permitir a organização de produtos por categoria.
+RF13 - Futuro: permitir organização de produtos por categoria.
 
-RF14 - O sistema deve permitir definir unidade de medida, custo, preço de venda e estoque mínimo.
+RF14 - O sistema permite custo, preço de venda e estoque mínimo. Unidade de
+medida configurável permanece futura.
 
-### Fornecedores
+### Fornecedores (futuro)
 
 RF15 - O sistema deve permitir o cadastro de fornecedores.
 
@@ -52,7 +54,7 @@ RF18 - O sistema deve permitir registrar entrada de estoque.
 
 RF19 - O sistema deve permitir registrar saída de estoque.
 
-RF20 - O sistema deve permitir registrar ajustes de estoque.
+RF20 - Futuro: permitir ajustes de estoque além das entradas e saídas atuais.
 
 RF21 - O sistema deve manter histórico das movimentações de estoque.
 
@@ -84,13 +86,15 @@ RF32 - O sistema deve apresentar indicadores básicos financeiros.
 
 RF33 - O sistema deve apresentar produtos com baixo estoque.
 
-RF34 - O sistema deve apresentar contas vencidas ou próximas do vencimento.
+RF34 - O sistema deve apresentar contas vencidas. Alertas de proximidade do
+vencimento permanecem futuros.
 
 ### Insights
 
 RF35 - O sistema deve gerar insights simples com base em regras de negócio.
 
-RF36 - O sistema deve apresentar recomendações explicáveis ao usuário.
+RF36 - O sistema deve apresentar insights explicáveis ao usuário, sem afirmar
+que o software recomenda ou toma uma decisão automaticamente.
 
 Exemplos de insights:
 

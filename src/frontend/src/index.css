@@ -1,12 +1,80 @@
-:root { font-family: Inter, "Segoe UI", Arial, sans-serif; color: #202c29; background: #f3f5f4; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; line-height: 1.5; }
+:root {
+  --color-primary: #14664d;
+  --color-primary-hover: #0b4936;
+  --color-primary-soft: #e7f2ec;
+  --color-bg: #f5f7f6;
+  --color-surface: #fff;
+  --color-surface-raised: #fff;
+  --color-surface-hover: #edf2ee;
+  --color-text: #24352e;
+  --color-muted: #65736b;
+  --color-border: #e1e7e3;
+  --color-input-border: #aebdb4;
+  --color-accent: #986413;
+  --color-success: #225a41;
+  --color-warning: #754813;
+  --color-error: #89273c;
+  --color-success-soft: #edf7f0;
+  --color-warning-soft: #fff6e5;
+  --color-error-soft: #fff0f2;
+  --color-error-soft-hover: #fbe4e8;
+  --color-error-border: #edc2ca;
+  --color-neutral-soft: #eff2f0;
+  --color-avatar-bg: #f6eddc;
+  --color-avatar-text: #825d20;
+  --color-focus: #b17815;
+  --color-overlay: #1a2e2366;
+  --color-chart-grid: #e4ebe7;
+  --color-chart-cursor: #14664d0d;
+  --color-chart-income: #18765c;
+  --color-chart-expense: #bc8842;
+  --radius: 8px;
+  --shadow: 0 3px 12px #24352e05;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: var(--color-text); background: var(--color-bg);
+  font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; line-height: 1.5;
+}
+[data-theme="dark"] {
+  --color-primary: #6fd0ac;
+  --color-primary-hover: #91ddc1;
+  --color-primary-soft: #1a382e;
+  --color-bg: #101714;
+  --color-surface: #17201c;
+  --color-surface-raised: #1d2823;
+  --color-surface-hover: #222e29;
+  --color-text: #e5ede9;
+  --color-muted: #9aaba2;
+  --color-border: #2d3a34;
+  --color-input-border: #46584f;
+  --color-accent: #e1ae5d;
+  --color-success: #78d1ad;
+  --color-warning: #e7bc72;
+  --color-error: #ff9aac;
+  --color-success-soft: #183127;
+  --color-warning-soft: #352918;
+  --color-error-soft: #391f25;
+  --color-error-soft-hover: #4a252e;
+  --color-error-border: #6b3944;
+  --color-neutral-soft: #242e2a;
+  --color-avatar-bg: #3a3020;
+  --color-avatar-text: #f0c77c;
+  --color-focus: #e4b55f;
+  --color-overlay: #050907b3;
+  --color-chart-grid: #2b3933;
+  --color-chart-cursor: #ffffff0a;
+  --color-chart-income: #63c7a3;
+  --color-chart-expense: #dda85d;
+  --shadow: 0 4px 18px #00000024;
+}
 * { box-sizing: border-box; letter-spacing: 0; }
-body { margin: 0; min-width: 280px; }
+html { background: var(--color-bg); }
+body { margin: 0; min-width: 280px; color: var(--color-text); background: var(--color-bg); }
 button, input { font: inherit; }
 button, a, input { -webkit-tap-highlight-color: transparent; }
-a { color: #14664d; text-underline-offset: 3px; }
-a:hover { color: #0b4936; }
+a { color: var(--color-primary); text-underline-offset: 3px; }
+a:hover { color: var(--color-primary-hover); }
 button { cursor: pointer; }
 button:disabled { cursor: wait; opacity: .7; }
-:focus-visible { outline: 3px solid #b17815; outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
 h1, p { margin: 0; }
 h1 { font-size: 28px; line-height: 1.25; font-weight: 650; overflow-wrap: anywhere; }

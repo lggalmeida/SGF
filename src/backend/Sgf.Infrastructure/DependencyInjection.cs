@@ -35,6 +35,11 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<RefreshTokenOptions>(configuration.GetSection(RefreshTokenOptions.SectionName));
         services.AddScoped<RefreshTokenGenerator>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<Sgf.Application.Analytics.IDashboardService, Sgf.Infrastructure.Analytics.DashboardService>();
+        services.AddScoped<Sgf.Application.Finance.IFinanceService, Sgf.Infrastructure.Finance.FinanceService>();
+        services.AddScoped<Sgf.Application.Products.IProductService, Sgf.Infrastructure.Products.ProductService>();
+        services.AddScoped<Sgf.Application.Inventory.IInventoryService, Sgf.Infrastructure.Inventory.InventoryService>();
         services.AddScoped<IRegisterCompanyOwnerUseCase, RegisterCompanyOwnerService>();
         services.AddScoped<ILoginUseCase, LoginService>();
         services.AddScoped<IGetCurrentUserUseCase, GetCurrentUserService>();

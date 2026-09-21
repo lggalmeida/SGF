@@ -74,18 +74,3 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     </section>
   )
 }
-
-export function SessionPage() {
-  const { user, signOut } = useAuth()
-  const [busy, setBusy] = useState(false)
-  if (!user) return <div className="loading" role="status">Carregando sua conta…</div>
-  return (
-    <section className="session-panel" aria-labelledby="page-title">
-      <p className="eyebrow">BEM-VINDO AO SGF</p>
-      <h1 id="page-title">Olá, {user.name}</h1>
-      <p className="account-email">{user.email}</p>
-      <dl><div><dt>Empresa atual</dt><dd>{user.company.name}</dd></div><div><dt>Perfil</dt><dd>{user.role}</dd></div></dl>
-      <button className="secondary" disabled={busy} onClick={async () => { setBusy(true); await signOut() }}>{busy ? 'Saindo…' : 'Sair'}</button>
-    </section>
-  )
-}
