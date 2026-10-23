@@ -142,10 +142,12 @@ Remove-Item Env:SGF_DEMO_PASSWORD
 ```
 
 A carga é manual, aceita apenas API HTTP em localhost e deve ser usada em banco
-local limpo. Ela cria a empresa **Mercado Exemplo LTDA**, 11 produtos, saldos
-variados, histórico, lançamentos pagos, pendentes e vencidos. Também ajusta,
+local limpo. Ela cria a empresa **Mercado Exemplo LTDA**, 16 produtos, 46
+movimentações de estoque distribuídas em aproximadamente 90 dias e 34 lançamentos
+financeiros pagos, pendentes e vencidos. Também ajusta,
 diretamente no PostgreSQL local, somente as datas dos registros que acabou de
-criar para formar períodos comparáveis e um produto parado. Não existe seed
+criar para formar séries financeiras, períodos comparáveis e um produto parado.
+Não existe seed
 automático em produção.
 
 Para recriar exclusivamente o ambiente local do zero, sabendo que todos os dados

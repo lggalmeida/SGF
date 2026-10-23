@@ -9,17 +9,18 @@ decorado. Antes da apresentação, carregue o cenário com
 - empresa: **Mercado Exemplo LTDA**;
 - usuário: `demo@sgf.local`;
 - senha: definida localmente no momento da carga;
-- 10 produtos ativos e um inativo;
-- um produto zerado e quatro produtos em estoque baixo (incluindo o zerado);
+- 15 produtos ativos e um inativo;
+- dois produtos zerados e cinco produtos em estoque baixo (incluindo os zerados);
 - um produto sem movimentação recente;
-- entradas e saídas com diferentes volumes;
-- receitas e despesas pagas no período atual e anterior;
+- 46 entradas e saídas distribuídas nos últimos 90 dias;
+- receitas e despesas pagas em vários dias do período atual, anterior e mais antigo;
 - contas futuras e vencidas a pagar e a receber.
 
 Os números foram escolhidos para serem coerentes e fáceis de explicar. Nos
-últimos 30 dias, as receitas realizadas somam R$ 12.500,00, as despesas
-R$ 5.830,00 e o saldo realizado R$ 6.670,00. Períodos anteriores permitem
-comparação. Pendências não entram nesse saldo.
+últimos 30 dias, as receitas realizadas somam R$ 12.240,00, as despesas
+R$ 5.440,00 e o saldo realizado R$ 6.800,00. O período anterior possui
+R$ 11.700,00 de receitas e R$ 4.300,00 de despesas, permitindo comparação
+visual. Pendências não entram no saldo realizado.
 
 ## Preparação Imediata
 
@@ -27,7 +28,7 @@ comparação. Pendências não entram nesse saldo.
 2. Health da API e banco respondendo Healthy.
 3. Banco demo carregado e login confirmado.
 4. Navegador em 100% de zoom, sem ferramentas de desenvolvimento abertas.
-5. Dashboard em `Últimos 30 dias`.
+5. Dashboard em `Últimos 30 dias`; depois, alternar brevemente para `Últimos 90 dias`.
 6. Uma aba reserva na tela de login.
 7. Terminal preparado apenas para recuperação; não exibir segredos.
 
